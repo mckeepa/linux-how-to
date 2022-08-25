@@ -2,6 +2,9 @@
 
 Create a debian server in a virtual machine from a command line.
 
+ - change to use local images
+ - update to for linux install paramters so that no interaction is needed.
+
 ```bash
 virt-install --virt-type kvm --name buster-amd64 \
 --location http://deb.debian.org/debian/dists/buster/main/installer-amd64/ \
