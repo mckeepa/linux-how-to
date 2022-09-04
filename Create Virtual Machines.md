@@ -14,3 +14,20 @@ virt-install --virt-type kvm --name buster-amd64 \
 --console pty,target_type=serial \
 --extra-args "console=ttyS0"
 ```
+
+## List all Images
+
+```bash
+virsh list --all
+```
+## Starting Network  
+```bash
+# List all virtyual Networks
+virsh net-list --all
+```
+
+## Starting VM 
+
+```bash
+virsh start buster-amd64  --console
+```
