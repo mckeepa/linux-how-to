@@ -19,15 +19,53 @@ virt-install --virt-type kvm --name buster-amd64 \
 
 ```bash
 virsh list --all
+
+virsh net-define /usr/share/libvirt/networks/default.xml
+# Network default defined from /usr/share/libvirt/networks/default.xml
+
+# Network default marked as autostarted
+virsh net-autostart default
+
+# Network default started
+virsh net-start default
+
+
 ```
 ## Starting Network  
+
+https://linuxconfig.org/how-to-use-bridged-networking-with-libvirt-and-kvm
+
 ```bash
 # List all virtyual Networks
 virsh net-list --all
+sudo virsh net-list --all
+sudo virsh net-edit default
+
+ip link show type bridge
+
+```
+
+## Ensure Graphic port is set to -1 and autoport is true
+
+
+```bash
+sudo virsh edit  k8-node-01.local
+```
+
+```xml
+    <graphics type='vnc' port='-1' autoport='yes' listen='127.0.0.1'>
+      <listen type='address' address='127.0.0.1'/>
+    </graphics>
 ```
 
 ## Starting VM 
 
 ```bash
 virsh start buster-amd64  --console
+sudo virsh start k8-control-plane.local  --console
+```
+# Get IP Addresses
+
+```bash
+virsh net-dhcp-leases default
 ```
