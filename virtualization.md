@@ -114,3 +114,61 @@ run the virt-install command using the following format (adjusting parameters as
 ```
 # sudo virt-install --name Habour --description 'Fedora 36 Server - Habour' --ram 4096 --vcpus 2 --disk path=/var/lib/libvirt/images/guest-harbor.qcow2 --os-variant fedora36 --network bridge=virbr0 --graphics vnc,listen=127.0.0.1,port=5901 --cdrom /var/lib/libvirt/images/Fedora-Server-dvd-x86_64-36-1.5.iso --noautoconsole
 ```
+
+# virsh Networks
+
+```bash
+sudo virsh net-list --all
+
+
+sudo nmcli connection show
+ip addr show dev virbr0
+ip addr sh
+
+virsh domiflist k8-control-plane.local
+ Interface   Type   Source   Model    MAC
+---------------------------------------------------------
+ -           user   -        virtio   52:54:00:32:81:03ow dev br0
+
+brctl show virbr0
+
+
+```
+
+virsh edit k8-control-plane.local
+
+```xml
+    <interface type="network">
+      <mac address="00:00:00:00:00:00"/>  # Give it some MAC address
+      <source network="bridged-network"/>
+      <model type="virtio"/>
+      <address type="pci" domain="0x0000" bus="0x02" slot="0x00" function="0x0"/>  # bus 0x02 since it's 2nd
+    </interface>
+```
+
+```bash
+
+https://linuxconfig.org/how-to-use-bridged-networking-with-libvirt-and-kvm
+
+#virsh attach-interface --domain k8-control-plane.local --type bridge --source br0  --model virtio # --target vsrx-mgmt
+
+virsh attach-interface --domain k8-control-plane.local --type bridge --source bridged-network --model virtio # --target vsrx-mgmt
+#virsh attach-interface --domain k8-control-plane.local --type bridge --source br0 --model virtio --config --live 
+
+# Start VM
+virsh start k8-control-plane.local
+
+# verify Interface List for damain 
+virsh domiflist k8-control-plane.local
+
+```
+
+# Get the IP Address for VM
+
+```bash 
+virsh net-list
+ Name              State    Autostart   Persistent
+----------------------------------------------------
+ bridged-network   active   yes         yes
+```
+
