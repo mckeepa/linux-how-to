@@ -9,11 +9,36 @@ Create a debian server in a virtual machine from a command line.
 virt-install --virt-type kvm --name buster-amd64 \
 --location http://deb.debian.org/debian/dists/buster/main/installer-amd64/ \
 --os-variant debian10 \
---disk size=10 --memory 1000 \
+--disk size=10 
+--memory 1024 \
 --graphics none \
 --console pty,target_type=serial \
 --extra-args "console=ttyS0"
 ```
+
+virt-install --name test01 --description 'Fedora 36 Server - Test01' --ram 4096 --vcpus 2 --disk path=/var/lib/libvirt/images/guest-test01.qcow2 --os-variant fedora36 --network bridge=br0 --graphics vnc,listen=127.0.0.1,port=5901 --cdrom /var/lib/libvirt/images/Fedora-Server-dvd-x86_64-36-1.5.iso --noautoconsole
+
+virt-install --virt-type kvm --name test01 \
+--cdrom /var/lib/libvirt/images/Fedora-Server-dvd-x86_64-36-1.5.iso \
+--os-variant fedora \
+--disk size=10 
+--memory 1024 \
+--graphics none \
+--console pty,target_type=serial \
+--extra-args "console=ttyS0"
+
+
+virt-install --name test01 --description 'Fedora 36 Server - Test01' --ram 4096 --vcpus 2 --disk path=/var/lib/libvirt/images/guest-test01.qcow2,size=10 --os-variant fedora36 --network bridge=br0 --graphics vnc,listen=127.0.0.1,port=5901 --cdrom /data/Fedora-Server-dvd-x86_64-36-1.5.iso --noautoconsole
+
+Starting install...
+Allocating 'guest-test01.qcow2'                                                                                                      |    0 B  00:00:00 ...
+Creating domain...                                                                                                                   |    0 B  00:00:00
+
+Domain is still running. Installation may be in progress.
+You can reconnect to the console to complete the installation process.
+
+ virsh console test01 --safe
+
 
 ## List all Images
 
@@ -100,6 +125,15 @@ ip addr
 
 ```
 
+## allow br0
+
+```bash
+sudo nano /etc/qemu/bridge.conf
+```
+allow virbr0
+allow br0
+
+
 # bring up the Bridge interface
 ```bash
 # nmcli con up br0
@@ -119,3 +153,48 @@ The bridge network configuration files are here  /etc/sysconfig/network-scripts
 
 
 
+# backup / Resore VM
+
+```bash 
+sudo virsh list --all   
+ Id   Name                     State
+-----------------------------------------
+ 9    k8-node-01.local         running
+ 10   k8-control-plane.local   running
+ -    fedora-k8-vm             shut off
+
+
+sudo virsh domblklist k8-control-plane.local
+ Target   Source
+------------------------------------------------------
+ vda      /var/lib/libvirt/images/guest-harbor.qcow2
+```
+
+## Backup
+```bash
+
+sudo virsh  backup-begin k8-control-plane.local   
+
+sudo virsh domjobinfo k8-control-plane.local
+Job type:         Unbounded
+Operation:        Backup
+Time elapsed:     13770        ms
+File processed:   9.321 GiB
+File remaining:   10.679 GiB
+File total:       20.000 GiB
+```
+
+list the files 
+'guest-harbor.qcow2.1662986226' is the backup.
+
+```bash
+sudo ls -lash /var/lib/libvirt/images/
+total 18G
+   0 drwx--x--x. 1 root root  228 Sep 12 22:37 .
+   0 drwxr-xr-x. 1 root root  104 Sep 11 13:33 ..
+3.7G -rw-------. 1 qemu qemu  21G Sep 12 22:44 Fedora36.qcow2
+964K -rw-------. 1 qemu qemu 5.1G Aug 25 22:41 fedora-k8-vm.qcow2
+2.2G -rw-r--r--. 1 qemu qemu 2.2G Aug  6 19:11 Fedora-Server-dvd-x86_64-36-1.5.iso
+5.8G -rw-r--r--. 1 qemu qemu 5.8G Sep 12 22:44 guest-harbor.qcow2
+5.8G -rw-------. 1 root root 5.8G Sep 12 22:37 guest-harbor.qcow2.1662986226
+```
