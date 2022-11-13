@@ -12,6 +12,8 @@
  ```bash
  kubectl create deployment demo --image=httpd --port=80
  kubectl expose deployment demo
+ kubectl expose deployment kubernetes-dashboard
+ 
 ```
 
 
@@ -20,7 +22,8 @@
 ```bash
  # create ingress object 
  kubectl create ingress demo-localhost --class=nginx   --rule="demo.localdev.me/*=demo:80"
- 
+ kubectl create ingress kubernetes-dashboard-localhost --class=nginx   --rule="kubernetes-dashboard.me/*=kubernetes-dashboard:8001"
+
  # temporary, expose port on this machine
  kubectl port-forward --namespace=ingress-nginx service/ingress-nginx-controller 8080:80
  # ctl c,  to stop port-forwarding
@@ -38,4 +41,5 @@
  #     using class : nginx
  #     rule        : "www.demo.io/*"  to be forwarded to port 80 on exposed deploment demo
  kubectl create ingress demo --class=nginx   --rule="www.demo.io/*=demo:80"
+ kubectl create ingress kubernetes-dashboard-localhost --class=nginx   --rule="kubernetes-dashboard.me/*=kubernetes-dashboard:8001" --namespace=kubernetes-dashboard
  ```
