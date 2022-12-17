@@ -331,7 +331,7 @@ Now I get :
 [ERROR FileAvailable--etc-kubernetes-manifests-kube-apiserver.yaml]: /etc/kubernetes/manifests/kube-apiserver.yaml already exists
 ```
 
-**Bask to basics... remove and re-install.**
+**Back to basics... remove and re-install.**
 ```bash
  yum remove -y kubelet kubeadm kubectl
 rm -R /etc/kubernetes/
@@ -341,9 +341,18 @@ or
 ```bash
 rm -f  /etc/kubernetes/manifests/*
 ```
+or 
 
-I already had a Docker instance running :
+
+
+run **--kubeadm reset--** first to undo all of the changes from the first time you ran it.
+Then run **--systemctl restart kubelet--**
+Finally, when you run kubeadm init you should no longer get the error.
+
+
+
 ```bash
+#I already had a Docker instance running :
 docker -ps -a 
 ```
 
