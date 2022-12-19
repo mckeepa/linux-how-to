@@ -2,6 +2,8 @@ From the Master Node
 
 Run these to outoput the commands for the Node
 ```bash
+kubeadm token create --print-join-command
+# or
 K3S_TOKEN=$(sudo cat /var/lib/rancher/k3s/server/node-token)
 K3S_EXTERNAL_IP=$(getent hosts pibox.local | awk '{print $1}' | head -1)
 

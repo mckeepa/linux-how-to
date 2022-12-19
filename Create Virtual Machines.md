@@ -198,3 +198,58 @@ total 18G
 5.8G -rw-r--r--. 1 qemu qemu 5.8G Sep 12 22:44 guest-harbor.qcow2
 5.8G -rw-------. 1 root root 5.8G Sep 12 22:37 guest-harbor.qcow2.1662986226
 ```
+
+
+# Backup and Restore
+```bash
+sudo virsh list --all            
+export VM_NAME='kube-workernode-00.k8'
+sudo virsh dumpxml $VM_NAME;
+
+sudo mkdir -p /opt/backup/kvm/;  
+sudo -i
+
+export VM_NAME='kube-workernode-00.k8'
+virsh dumpxml $VM_NAME > "/opt/backup/kvm/$VM_NAME.xml"; 
+cp /var/lib/libvirt/images/kube-workernode-00.k8.qcow2 /opt/backup/kvm/;
+```
+
+
+## Restore your KVM virtual machine
+Begin by erasing the virtual machine’s hard disk and undefining the VM so that it does not exist any longer. 
+Using the domblklist command, identify the qcow2 files to be deleted. 
+Make sure that the VM is stopped using the shutdown command, then delete the file(s) from the hard drive:
+
+```bash
+rm /var/lib/libvirt/images/nba.qcow2;
+```
+
+## Remove the VM definition:
+Need to remove the existing definition before restoring a backup.
+```bash
+virsh undefine $VM_NAME;
+```
+
+### Restore the virtual machine (VM).
+Bring back the virtual machine that was removed, first get back the hard drive:
+
+```bash
+cp /opt/backup/kvm/nba.qcow2 /var/lib/libvirt/images/;
+```
+Bring back the original definition of the domain.
+```bash
+virsh define --file "/opt/backup/kvm/$VM_NAME.xml";
+```
+If moving it to a different physical host, check to see if the information included within the XML file needs to be updated. 
+Check to see if the new physical host has network interfaces, for instance...
+
+Execute the following to check that the parameters of your virtual machine (VM) have been successfully defined:
+```bash
+virsh list --all;
+```
+Sart using the VM:
+```bash 
+virsh start $VM_NAME;
+```
+
+Once the virtual machine (VM) is up and running, use SSH to log into it and check that everything was correctly restored.

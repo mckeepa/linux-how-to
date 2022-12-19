@@ -6,6 +6,18 @@ These are my notes on an intallation and troble shhoting on a KubeAdm Install on
 # Pre-Install Steps
 There are a couple of pre-checks to do.
 
+## Webpage for issues:
+
+
+### Set hostname
+
+```bash
+sudo hostnamectl set-hostname kube-controlplane-00.k8
+sudo hostnamectl set-hostname kube-wokernode-00.k8
+sudo hostnamectl set-hostname kube-wokernode-01.k8
+```
+
+
 ## Setup Static IP Address
 I discovered that when the IP Address changes the Kubernates Cluster fails, so we'll need to set a staic IP Address.
 
@@ -163,11 +175,13 @@ net.ipv4.ip_forward                 = 1
 net.bridge.bridge-nf-call-ip6tables = 1
 EOF
 ```
+https://jhooq.com/amp/kubernetes-error-execution-phase-preflight-preflight/#error-file-content-proc-sys-net
+
 
 ```bash
 sudo sysctl --system
 # List the instance of CRI-O in the package repository 
-[root@fedora ~]# dnf module list cri-o
+dnf module list cri-o
 Fedora 35 - x86_64 - Updates                                                                                                                                                5.7 kB/s | 4.2 kB     00:00    
 Fedora 35 - x86_64 - Updates                                                                                                                                                1.3 MB/s | 2.9 MB     00:02    
 Fedora Modular 35 - x86_64 - Updates                                                                                                                                        4.7 kB/s | 3.4 kB     00:00    
@@ -185,10 +199,10 @@ cri-o                              1.22                                default [
 ```
 
 ```bash
-export VERSION=1.22
-dnf module enable cri-o:$VERSION
-dnf module enable cri-o:$VERSION
-dnf install cri-o
+export VERSION=1.25
+sudo dnf module enable cri-o:$VERSION
+sudo dnf module enable cri-o:$VERSION
+sudo dnf install cri-o
 
 sudo systemctl daemon-reload
 sudo systemctl enable crio
@@ -262,6 +276,8 @@ sudo yum install -y kubelet kubeadm kubectl --disableexcludes=kubernetes
 
 sudo systemctl enable --now kubelet
 ```
+
+
 
 ### Pull Images before install
 Option command, to save some time when the actual install is occuring:
@@ -394,7 +410,8 @@ kubeadm reset
 
 ### Now set ip_forward content with 1:
 ```bash
-
+# as sudo
+sudo -i
 echo 1 > /proc/sys/net/ipv4/ip_forward
 ```
 
@@ -439,6 +456,14 @@ kubeadm join 192.168.1.134:6443 --token ivlc5m.emalaa64qiqui5c6 \
 	--discovery-token-ca-cert-hash sha256:824c566afdf8111419eacc8fd983690aca88c39ab5f685f9fb3656387efb2e69 
 [root@fedora ~]#
 ```
+
+#Joing Worker Node
+```bash 
+# kube-controlplane-00
+kubeadm token create --print-join-command
+kubeadm join kube-controlplane-00.k8:6443 --token dtn74m.t71fzza0fdvekte7 --discovery-token-ca-cert-hash sha256:8f769857e608971b5cf5bf5ea75cee376cfade7f7549bc486922104ae86f2d65 --v=2
+
+``
 
 ## Setup Kubernetes Dashboard
 Create a resourece file dashboard-adminuser.yaml:
@@ -491,3 +516,111 @@ kubectl proxy
 
 ## Setup CoreDNS 
 Already running as part of the install... ?
+
+
+
+## Setup Worker Node
+
+[paul@localhost ~]$ sudo dnf install cri-o
+[paul@localhost ~]$ sudo systemctl daemon-reload
+[paul@localhost ~]$ sudo systemctl enable crio
+[paul@localhost ~]$ sudo systemctl start crio
+[paul@localhost ~]$ sudo systemctl status crio
+[paul@localhost ~]$ 
+
+sudo kubeadm init --pod-network-cidr=$CIDR --cri-socket=unix:///var/run/crio/crio.sock
+sudo kubeadm init --pod-network-cidr=$CIDR --cri-socket=unix:///var/run/crio/crio.sock --control-plane-endpoint=kube-controlplane-00.k8
+
+
+#from Control Plane
+#kube-controlplane-00
+kubeadm token create --print-join-command
+sudo kubeadm join kube-controlplane-00.k8:6443 --token 3gcpnb.ft7fem7gq7ty4st0 --discovery-token-ca-cert-hash sha256:8f769857e608971b5cf5bf5ea75cee376cfade7f7549bc486922104ae86f2d65 
+kubectl label node kube-workernode-00.k8 node-role.kubernetes.io/worker=worker
+
+
+To start using your cluster, you need to run the following as a regular user:
+
+  mkdir -p $HOME/.kube
+  sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+  sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+Alternatively, if you are the root user, you can run:
+
+  export KUBECONFIG=/etc/kubernetes/admin.conf
+
+You should now deploy a pod network to the cluster.
+Run "kubectl apply -f [podnetwork].yaml" with one of the options listed at:
+  https://kubernetes.io/docs/concepts/cluster-administration/addons/
+
+Then you can join any number of worker nodes by running the following on each as root:
+
+sudo kubeadm join kube-controlplane-00.k8:6443 --token xdwt88.1e60vy33b3zxo41c \
+	--discovery-token-ca-cert-hash sha256:eb990148433f6b81853b8ce893486d53b4f7894e150d474864a6a5952e5d59a0 --v=2
+
+
+# NODE SET-UP
+
+
+``` bash
+[paul@localhost ~]$ cat <<EOF | sudo tee /etc/yum.repos.d/kubernetes.repo
+[kubernetes]
+name=Kubernetes
+baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-\$basearch
+enabled=1
+gpgcheck=1
+gpgkey=https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+exclude=kubelet kubeadm kubectl
+EOF
+
+[paul@localhost ~]$ sudo setenforce 0
+[paul@localhost ~]$ sudo sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
+[paul@localhost ~]$ sudo yum install -y kubelet kubeadm kubectl --disableexcludes=kubernetes
+[paul@localhost ~]$ sudo systemctl enable --now kubelet
+
+
+sudo modprobe br_netfilter
+cat <<EOF | sudo tee /etc/sysctl.d/99-kubernetes-cri.conf
+net.bridge.bridge-nf-call-iptables  = 1
+net.ipv4.ip_forward                 = 1
+et.bridge.bridge-nf-call-ip6tables = 1
+EOF
+
+
+cat <<EOF | sudo tee /etc/sysctl.d/k8s.conf
+net.bridge.bridge-nf-call-ip6tables = 1
+net.bridge.bridge-nf-call-iptables = 1
+EOF
+
+sudo firewall-cmd --add-port=30000-32767/tcp
+sudo firewall-cmd --add-port=10250/tcp
+
+dnf module list cri-o
+export VERSION=1.25
+sudo dnf module enable cri-o:$VERSION
+sudo dnf module enable cri-o:$VERSION
+sudo dnf install cri-o
+sudo systemctl daemon-reload
+sudo systemctl enable crio
+sudo systemctl start crio
+
+echo 1 > /proc/sys/net/ipv4/ip_forward
+curl sudo sysctl -w net.ipv4.ip_forward=1
+
+
+kubeadm join kube-controlplane-00.k8:6443 --token 8ukrt0.qv6kodfjfq43g25v \
+	--discovery-token-ca-cert-hash sha256:d5a3edfa1ba796f507a9aafacfa3a98cee61601605b2777b1c83e125b7cba35b --v=2
+	
+	
+Here are following command which you can use -
+
+$ sudo vi /etc/sysctl.conf
+BASH
+After opening the file sysctl.conf in edit mode, add the following line if its not there.
+
+net.bridge.bridge-nf-call-iptables = 1
+BASH
+Then you need to execute
+
+$ sudo sysctl -p
+```
