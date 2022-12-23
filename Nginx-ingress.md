@@ -1,5 +1,65 @@
+
 # Install kubernetes ingress-nginx
 
+
+https://medium.com/tektutor/using-metal-lb-on-a-bare-metal-onprem-kubernetes-setup-6d036af1d20c
+
+
+
+kubectl create deploy nginx --image=nginx:1.20
+kubectl get deploy,rs,po
+kubectl scale deploy/nginx --replicas=3
+kubectl get deploy,rs,po
+kubectl get deploy,rs,po -o=wide
+kubectl expose deploy/nginx --type=LoadBalancer --port=80
+kubectl get deploy,rs,po,svc -o=wide
+kubectl describe svc/nginx
+kubectl scale deploy/nginx --replicas=0
+kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.11.0/manifests/namespace.yaml
+
+# on Master and all workers
+sudo firewall-cmd --permanent --add-port=7472/tcp --zone=trusted
+sudo firewall-cmd --permanent --add-port=7472/udp --zone=trusted
+sudo firewall-cmd --permanent --add-port=7946/tcp --zone=trusted
+sudo firewall-cmd --permanent --add-port=7946/udp --zone=trusted
+sudo firewall-cmd --reload
+sudo firewall-cmd --list-all
+
+# for this directory
+kubectl apply -f metal-lb-cm.yml
+
+# v0.11 had errors, moved to metallb/v0.13.7 metallb-native.yaml
+# kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.11.0/manifests/metallb.yaml
+# kubectl apply -f metallb.yaml
+
+# kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.13.7/config/manifests/metallb-native.yaml
+kubectl apply -f metallb-native.yaml 
+kubectl scale deploy nginx --replicas=3
+
+kubectl get pod  -n metallb-system
+kubectl scale deploy nginx --replicas=3
+kubectl expose deploy nginx --type=LoadBalancer --port=80
+
+# scale ngix back up
+kubectl scale deploy nginx --replicas=3   
+kubectl get deploy,rs,po,svc -o=wide
+
+kubectl expose deploy nginx --type=LoadBalancer --port=80
+
+
+## Metal-lb BGP Configuration
+https://metallb.universe.tf/configuration/
+
+## Clean up
+kubectl get validatingwebhookconfigurations
+kubectl delete validatingwebhookconfigurations metallb-webhook-configuration
+kubectl delete namespace metallb-system
+kubectl get svc
+kubectl delete svc nginx 
+kubectl get namespace
+
+
+# old -----------------------
 ```bash
  kubectl get pods --namespace=ingress-nginx
  kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.4.0/deploy/static/provider/cloud/deploy.yaml
