@@ -624,11 +624,3 @@ Then you need to execute
 
 $ sudo sysctl -p
 ```
-
-# Calico
-https://projectcalico.docs.tigera.io/getting-started/kubernetes/self-managed-onprem/onpremises
-Using Manifest files
-
-curl https://raw.githubusercontent.com/projectcalico/calico/v3.24.5/manifests/calico-etcd.yaml -o calico.yaml
-
-kubectl apply -f calico.yaml
