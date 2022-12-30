@@ -253,3 +253,15 @@ virsh start $VM_NAME;
 ```
 
 Once the virtual machine (VM) is up and running, use SSH to log into it and check that everything was correctly restored.
+
+
+# File Sharing (virtiofs) - used in Persistant Volumes (PV)
+
+## on Client
+
+mount -t virtiofs host_shared /mnt/host-share/
+
+findmnt 
+findmnt /mnt/host-share
+
+
