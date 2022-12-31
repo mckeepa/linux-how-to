@@ -2,6 +2,9 @@
 
 following steps here : https://docs.fedoraproject.org/en-US/quick-docs/getting-started-with-virtualization/
 
+![alt text](./images/Infra-Kubernetes.png "Title")
+
+
 ## 
 ``` bash
 Install dnf groupinfo virtualization
