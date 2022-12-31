@@ -261,7 +261,40 @@ Once the virtual machine (VM) is up and running, use SSH to log into it and chec
 
 mount -t virtiofs host_shared /mnt/host-share/
 
+sudo mkdir -p /mnt/data/
+sudo mount -t virtiofs host_shared /mnt/data/
+ls -la /mnt/data/
+
 findmnt 
 findmnt /mnt/host-share
 
+## follow creating a pod with mount
+https://kubernetes.io/docs/tasks/configure-pod-container/configure-persistent-volume-storage/
 
+```bash
+# This again assumes that your Node uses "sudo" to run commands
+# as the superuser
+sudo sh -c "echo 'Hello from Kubernetes storage' > /mnt/data/index.html"
+
+```
+pv-volume.yaml
+```yaml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: task-pv-volume
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/mnt/data"
+```
+
+```bash
+kubectl apply -f https://k8s.io/examples/pods/storage/pv-volume.yaml
+```
