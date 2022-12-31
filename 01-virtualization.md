@@ -57,6 +57,7 @@ Network default started
 When the libvirt default network is running, you will see an isolated bridge device. This device explicitly does *NOT* have any physical interfaces added, since it uses NAT + forwarding to connect to outside world. Do not add interfaces
 Ensure Auto Start
 
+! NOTE: change this to a **Routed** network
 ```bash
 brctl show
 ```
@@ -145,6 +146,37 @@ virsh edit k8-control-plane.local
       <address type="pci" domain="0x0000" bus="0x02" slot="0x00" function="0x0"/>  # bus 0x02 since it's 2nd
     </interface>
 ```
+
+or Routed
+```xml
+<interface type="network">
+  <mac address="52:54:00:27:16:b1"/>
+  <source network="k8network" portid="29f5e1f4-e786-4f40-a88c-adce46838e74" bridge="virbr0"/>
+  <target dev="vnet24"/>
+  <model type="virtio"/>
+  <alias name="net0"/>
+  <address type="pci" domain="0x0000" bus="0x01" slot="0x00" function="0x0"/>
+</interface>
+```
+
+FROM VM Console:
+
+```xml
+<network>
+  <name>k8network</name>
+  <uuid>5e4dfd68-69e7-47ed-87d1-3b25203d8b57</uuid>
+  <forward mode="route"/>
+  <bridge name="virbr0" stp="on" delay="0"/>
+  <mac address="52:54:00:15:1f:a3"/>
+  <domain name="k8network"/>
+  <ip address="192.168.100.1" netmask="255.255.255.0">
+    <dhcp>
+      <range start="192.168.100.128" end="192.168.100.254"/>
+    </dhcp>
+  </ip>
+</network>
+```
+
 
 ```bash
 
