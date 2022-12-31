@@ -13,10 +13,7 @@
  kubectl create deployment demo --image=httpd --port=80
  kubectl expose deployment demo
  kubectl expose deployment kubernetes-dashboard
- 
 ```
-
-
 
 # Expose Demo application
 ```bash
