@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mymicroservice
+  namespace: testing
+spec:
+  containers:
+    - name: mymicroservice
+      image: kube-harbor-00.k8/test-dotnet/mymicroservice:latest
+  imagePullSecrets:
+    - name: regcred

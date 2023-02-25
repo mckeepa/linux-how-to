@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mymicroservice
+  namespace: testing
+spec:
+  containers:
+    - name: mymicroservice
+      image: mymicroservice:latest 
+ 

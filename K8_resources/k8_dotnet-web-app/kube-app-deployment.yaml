@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mymicroservice
+  namespace: testing
+spec:
+  containers:
+    - name: mymicroservice
+      image: mymicroservice:latest 
+ 
+
+ apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mymicroservice
+spec:
+  selector:
+    matchLabels:
+      run: mymicroservice-example
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        run: mymicroservice-example
+    spec:
+      containers:
+        - name: mymicroservice
+          image: mymicroservice:latest 
+          ports:
+            - containerPort: 3000
+              protocol: TCP
