@@ -207,3 +207,51 @@ virsh net-list
  bridged-network   active   yes         yes
 ```
 
+
+# Mount share Storeage -  Version 2
+In QEUM/KVM manager, set VM to use Shared Memory
+
+ - Turn off VM.
+ - Add 'Hardware
+ - Add "File System"
+ - change to Edit XML - noting the Source on the host, and the target mount name 
+ 
+ ```xml
+ <filesystem type="mount" accessmode="passthrough">
+  <driver type="virtiofs"/>
+  <binary path="/usr/lib/qemu/virtiofsd"/>
+  <source dir="/mnt/kube-share"/>
+  <target dir="k8-data"/>
+  <alias name="fs0"/>
+  <address type="pci" domain="0x0000" bus="0x08" slot="0x00" function="0x0"/>
+</filesystem>
+ ```
+
+## on the Guest
+
+Create the directory
+```bash
+mkdir /k8-data
+```
+Optinally mount file system temporarally (will not be mounted on restart) 
+```bash
+sudo mount -t virtiofs k8-data /k8-data
+```
+
+## Ensure Mount is avalible afetr restart 
+```bash
+sudo vi /etc/fstab
+```
+Add this line at the bottom
+```ini
+# /dev/sdb1 /data    ext4    defaults        0       0
+k8-data /k8-data virtiofs rw,relatime 0 0
+k8-data                                   /k8-data                virtiofs rw,relatime    0 0
+```
+Then re-load the systemctl deomon to apply the change.
+```bash
+sudo systemctl daemon-reload
+```
+
+The directory on host "/mnt/kube-share"
+is now mounted on "/k8-data" in the guest.
