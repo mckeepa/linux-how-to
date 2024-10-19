@@ -23,17 +23,17 @@ spec:
       min.insync.replicas: 1
       inter.broker.protocol.version: "3.6"
     storage:
-      type: jbod
+      type: ephemeral
       volumes:
       - id: 0
-        type: persistent-claim
-        size: 100Gi
+        type: ephemeral
+        size: 9Gi
         deleteClaim: false
   zookeeper:
     replicas: 1
     storage:
-      type: persistent-claim
-      size: 100Gi
+      type: ephemeral
+      size: 9Gi
       deleteClaim: false
   entityOperator:
     topicOperator: {}
