@@ -107,3 +107,56 @@ vault write auth/jwt/role/myproject-production -<<EOF
 EOF
 
 ```
+
+# Vault Kerberos
+On Vault Server
+
+https://developer.hashicorp.com/vault/docs/auth/kerberos
+
+
+```bash
+[paul@rhel9-vault ~]$ sudo ktutil 
+[sudo] password for paul: 
+ktutil:  addent -password -p svc_keycloak@gardenofrot.cc -e aes256-cts -k 1
+Password for svc_keycloak@gardenofrot.cc: 
+ktutil:  list -e
+slot KVNO Principal
+---- ---- ---------------------------------------------------------------------
+   1    1              svc_keycloak@gardenofrot.cc (aes256-cts-hmac-sha1-96) 
+ktutil:  wkt vault.keytab
+ktutil:  exit
+ vault.keytab.base64
+
+
+
+
+```
+vault login -tls-skip-verify -address=https://127.0.0.1:8202 hvs.<<RETACTED>>
+
+
+vault auth enable -tls-skip-verify \
+    -passthrough-request-headers=Authorization \
+    -allowed-response-headers=www-authenticate \
+    kerberos
+
+
+vault write -tls-skip-verify \
+    auth/kerberos/config \
+    keytab=@vault.keytab.base64 \
+    service_account="vault_svc" 
+
+
+export VAULT_SVC_USERNAME="svc_keycloak@gardenofrot.cc"    
+export VAULT_SVC_PASSWORD="xxxxxxxxxxxxxxxxxxx"
+
+vault write -tls-skip-verify \
+    auth/kerberos/config/ldap \
+    binddn=$VAULT_SVC_USERNAME  \
+    bindpass=$VAULT_SVC_PASSWORD \
+    groupattr=sAMAccountName \
+    groupdn="DC=GARDENOFROT,DC=CC" \
+    groupfilter="(&(objectClass=group)(member:1.2.840.113556.1.4.1941:={{.UserDN}}))" \
+    userdn="CN=Users,DC=GARDENOFROT,DC=CC" \
+    userattr=sAMAccountName \
+    upndomain=GARDENOFROT.CC \
+    url=ldaps://freeipa.gardenofrot.cc

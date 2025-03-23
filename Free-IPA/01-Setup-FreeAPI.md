@@ -57,12 +57,20 @@ sudo systemctl status ssh
 
 cat /etc/lsb-release 
 hostname -f
+sudo hostnamectl set-hostname newhostname
 cat /etc/resolv.conf
 
 apt install freeipa-client
 sudo nano /etc/resolv.conf 
 
-nslookup ipa.gardenofrot.cc
+nslookup freeipa.gardenofrot.cc
+
+
+# Firewall
+for i in 80 443 389 636 88 464; do sudo ufw allow proto tcp from any to any port $i; done
+for i in 88 464 123; do sudo ufw allow proto udp from any to any port $i; done
+sudo ufw reload
+
 
 ipa-client-install --mkhomedir
 grep paul /etc/passwd
@@ -85,13 +93,13 @@ options edns0 trust-ad
 search .
 ```
 
+https://www.linuxtechi.com/configure-freeipa-client-on-ubuntu/
 
 
 
 
 
 
-https://www.google.com/search?q=ubuntu+join+to+freeipa+domain&num=10&sca_esv=e10ce1b38eab34ab&sxsrf=ADLYWIIOk8QJM5wf4A4UhNlwVg_HQv_lqQ%3A1733022947572&ei=49RLZ__RItmOseMPgc2OuAU&ved=0ahUKEwi_z7XJzYWKAxVZR2wGHYGmA1cQ4dUDCA8&uact=5&oq=ubuntu+join+to+freeipa+domain&gs_lp=Egxnd3Mtd2l6LXNlcnAiHXVidW50dSBqb2luIHRvIGZyZWVpcGEgZG9tYWluMggQABiABBiiBDIIEAAYgAQYogQyCBAAGIAEGKIESKAPUPsJWPYNcAF4AZABAJgBjAKgAYwCqgEDMi0xuAEDyAEA-AEBmAICoAKUAsICChAAGLADGNYEGEeYAwCIBgGQBgeSBwUxLjAuMaAH9AI&sclient=gws-wiz-serp#fpstate=ive&vld=cid:cdf2f90c,vid:BhVygK0DNPA,st:0
 
 # Create SSL Certificate for Web Service
 
