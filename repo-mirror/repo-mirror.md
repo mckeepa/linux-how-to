@@ -1,0 +1,196 @@
+# Create a Mirror 
+
+## Check what repos are on the Server
+
+```bash
+dnf repo list
+
+repo id                      repo name                                                                                                         
+fedora                       Fedora 41 - x86_64                                                                                                
+fedora-cisco-openh264        Fedora 41 openh264 (From Cisco) - x86_64                                                                          
+updates                      Fedora 41 - x86_64 - Updates  
+zfs                          ZFS on Linux for EL41 - dkms           
+
+```
+
+### Remove the Repo
+```bash
+sudo rm /etc/yum.repos.d/zfs.repo
+```
+
+## Add VC Code Repo
+```bash
+sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
+echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\nautorefresh=1\ntype=rpm-md\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" | sudo tee /etc/yum.repos.d/vscode.repo > /dev/null
+
+
+dnf check-update
+dnf repo list
+
+```
+
+
+## Test with code on RHEL9 add the GPG for the RPM Repo
+
+```bash
+# or use a RMP file
+sudo dnf install https://zfsonlinux.org/epel/zfs-release-2-3.el9.noarch.rpm
+
+
+#sudo dnf config-manager --set-disabled fedora 
+sudo dnf config-manager --set-disabled fedora-cisco-openh264
+sudo dnf config-manager --set-disabled updates
+```
+
+
+## sync only the fedora and zf  repo.  shold run these on a chrom job
+```bash 
+sudo dnf reposync --delete -p /mnt/packages/ --repoid=fedora --newest-only --download-metadata
+sudo dnf reposync --delete -p /mnt/packages/ --repoid=code --newest-only --download-metadata
+
+``` 
+
+## Use of synced Repos 
+```bash
+$ cd /etc/yum.repos.d/
+$ ls -la
+
+total 28
+drwxr-xr-x.   2 root root  121 Mar 29 12:55 .
+drwxr-xr-x. 113 root root 8192 Mar 29 13:52 ..
+-rw-r--r--.   1 root root 1102 Oct 18 11:00 fedora-cisco-openh264.repo
+-rw-r--r--.   1 root root 1239 Oct 18 11:00 fedora.repo
+-rw-r--r--.   1 root root 1286 Oct 18 11:00 fedora-updates.repo
+-rw-r--r--.   1 root root 1344 Oct 18 11:00 fedora-updates-testing.repo
+```
+
+```bash
+vi zfs-local..repo
+```
+
+
+# start the HTTP server
+```bash
+sudo dnf install httpd -y
+sudo systemctl status httpd.service
+sudo systemctl enable httpd.service
+
+sudo systemctl start httpd.service
+sudo systemctl status httpd.service
+
+```
+## Generate cert 
+
+```config
+# the fully qualified server (or service) name
+FQDN = downloader.gardenofrot.cc
+
+# the name of your organization
+# (see also https://www.switch.ch/pki/participants/)
+ORGNAME = Garden Of Rot
+
+# subjectAltName entries: to add DNS aliases to the CSR, delete
+# the '#' character in the ALTNAMES line, and change the subsequent
+# 'DNS:' entries accordingly. Please note: all DNS names must
+# resolve to the same IP address as the FQDN.
+ALTNAMES = DNS:$FQDN   # , DNS:bar.example.org , DNS:www.foo.example.org
+
+# --- no modifications required below ---
+[ req ]
+default_bits = 2048
+default_md = sha256
+prompt = no
+encrypt_key = no
+distinguished_name = dn
+req_extensions = req_ext
+
+[ dn ]
+C = CH
+O = $ORGNAME
+CN = $FQDN
+
+[ req_ext ]
+subjectAltName = $ALTNAMES
+```
+
+```bash
+openssl req /
+  -new /
+  -config ~/certs/downloader.gardenofrot.cc.cnf /
+  -keyout ~/certs/downloader.gardenofrot.cc.key /
+  -out ~/certs/downloader.gardenofrot.cc.csr
+```
+
+### generated Certificate from IPA
+
+On FreeIPA server
+```bash
+ipa cert-request --principal=host/downloader.gardenofrot.cc downloader.gardenofrot.cc.csr
+```
+Download the PEM file
+```bash
+ls -l
+total 16
+-rw-r--r--. 1 admin-paul admin-paul  987 Mar 29 17:18 downloader.gardenofrot.cc.cnf
+-rw-r--r--. 1 admin-paul admin-paul 1037 Mar 29 17:18 downloader.gardenofrot.cc.csr
+-rw-------. 1 admin-paul admin-paul 1704 Mar 29 17:18 downloader.gardenofrot.cc.key
+-rw-------. 1 admin-paul admin-paul 1720 Mar 29 17:24 downloader.gardenofrot.cc.pem
+```
+## Add HTTPS to HTTPD
+```bash
+sudo dnf install mod_ssl -y
+sudo cp ~/certs/downloader.gardenofrot.cc.key /etc/pki/tls/private/downloader.gardenofrot.cc.key
+# .pem and .crt are the same
+sudo mv ~/certs/downloader.gardenofrot.cc.pem /etc/pki/tls/certs/downloader.gardenofrot.cc.crt
+
+sudo mv ~/certs/downloader.gardenofrot.cc.key /etc/pki/tls/private/downloader.gardenofrot.cc.key
+
+sudo mv ~/certs/downloader.gardenofrot.cc.pem /etc/pki/tls/certs/downloader.gardenofrot.cc.crt
+
+restorecon /etc/pki/tls/private/downloader.gardenofrot.cc.key
+restorecon /etc/pki/tls/certs/downloader.gardenofrot.cc.crt
+sudo chown root:root /etc/pki/tls/private/downloader.gardenofrot.cc.key 
+sudo chown root:root /etc/pki/tls/certs/downloader.gardenofrot.cc.crt
+
+sudo chmod 0600 /etc/pki/tls/private/downloader.gardenofrot.cc.key     
+sudo chmod 0600 /etc/pki/tls/certs/downloader.gardenofrot.cc.crt
+```
+
+The default TLS/SSL configuration is contained in the file /etc/httpd/conf.d/ssl.conf. In the ssl.conf file, following are the directives that specify where the TLS/SSL certificate and key are located:
+```bash
+
+cat /etc/httpd/conf.d/ssl.conf
+sudo vi /etc/httpd/conf.d/ssl.conf
+```
+
+File this in the file and update it.
+
+```conf
+SSLCertificateFile /etc/pki/tls/certs/downloader.gardenofrot.cc.crt
+SSLCertificateKeyFile /etc/pki/tls/private/downloader.gardenofrot.cc.key
+```
+```bash
+sudo firewall-cmd --add-service https
+sudo firewall-cmd --permanent --zone=public --add-service=https 
+sudo firewall-cmd --reload
+```
+
+/home/paul/vm-images/shared/packages/code
+
+```xml
+# Ensure that Apache listens on port 80
+Listen 80
+<VirtualHost *:80>
+    DocumentRoot "/home/paul/vm-images/shared/packages/code"
+    ServerName downloader.gardenofrot.cc
+
+    # Other directives here
+</VirtualHost>
+
+<VirtualHost *:443>
+    DocumentRoot "/home/paul/vm-images/shared/packages/code"
+    ServerName downloader.gardenofrot.cc
+
+    # Other directives here
+</VirtualHost>
+```
