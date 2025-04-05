@@ -16,6 +16,9 @@ Set the Hostname
 sudo cat /etc/hostname
 sudo hostnamectl set-hostname --pretty "ipa.gardenofrot.cc"
 sudo hostnamectl set-hostname --static "ipa.gardenofrot.cc"
+
+sudo hostnamectl set-hostname --pretty "kali-vm.gardenofrot.cc"
+sudo hostnamectl set-hostname --static "kali-vm.gardenofrot.cc"
 ```
 
 ## Update System
@@ -154,6 +157,23 @@ sudo authselect enable-feature with-mkhomedir
 https://www.linuxtechi.com/configure-freeipa-client-on-ubuntu/
 
 
+# Join RHEL to freeIPA IdM
+
+Install client
+
+```bash
+sudo dnf install freeipa-client -y
+
+sudo cat /etc/hostname
+sudo hostnamectl set-hostname --pretty "ansible-01.gardenofrot.cc"
+sudo hostnamectl set-hostname --static "ansible-01.gardenofrot.cc"
+
+sudo ipa-client-install
+sudo ipa-client-install --mkhomedir --domain gardenofrot.cc --server freeipa.gardenofrot.cc 
+sudo ipa-client-install --password 'W5YpARl=7M.n' --domain example.com --server server.example.com --unattended
+```
+
+
 ## How to join Fedora 41  with FreeIPA Identity management server
 https://www.freeipa.org/page/ConfiguringFedoraClients
 
@@ -163,6 +183,7 @@ This should install all the dependencies as well.
 1. Instal the client
 ```bash
 sudo yum install ipa-client
+
 ```
 2. If your IPA server was set up for DNS, and is in the same domain as the client, add the server’s IP address to the client’s /etc/resolv.conf file.
 

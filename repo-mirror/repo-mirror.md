@@ -194,3 +194,38 @@ Listen 80
     # Other directives here
 </VirtualHost>
 ```
+
+# Virt-Manager - qeum/kvn
+
+
+## In Virtual Manager
+Add Hardware:  filesystem
+
+```xml
+<filesystem type="mount" accessmode="passthrough">
+  <driver type="virtiofs"/>
+  <binary path="/usr/lib/qemu/virtiofsd"/>
+  <source dir="/home/paul/vm-images/shared/packages"/>
+  <target dir="packages_tag"/>
+  <alias name="fs0"/>
+  <address type="pci" domain="0x0000" bus="0x07" slot="0x00" function="0x0"/>
+</filesystem>
+
+
+```
+
+## On Guest
+```bash
+sh-5.2$ sudo mkdir /mnt/packages
+sh-5.2$ sudo mount -t virtiofs packages_tag /mnt/packages
+
+
+sh-5.2$ ls -la /mnt/packages/
+total 12
+drwxrwxrwx. 4 paul       paul       4096 Mar 29 22:59 .
+drwxr-xr-x. 1 root       root         16 Apr  5 22:08 ..
+-rw-r--r--. 1 admin-paul admin-paul    0 Mar 29 14:21 aaa.txt
+drwxr-xr-x. 4 root       root       4096 Mar 29 16:24 code
+drwxr-xr-x. 4 root       root       4096 Mar 29 15:53 fedora
+sh-5.2$ 
+```

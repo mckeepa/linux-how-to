@@ -1,0 +1,16 @@
+myhosts:
+
+# 192.168.122.124
+# 192.168.122.243
+# 192.168.122.125
+# 192.168.122.70
+
+  hosts:
+    fedora-dev.gardenofrot.cc:
+      ansible_host: 192.168.122.124
+    downloader.gardenofrot.cc:
+      ansible_host: 192.168.122.243
+    fedora-webserver.gardenofrot.cc:
+      ansible_host: 192.168.122.125
+    kali-vm:
+      ansible_host: 192.168.122.70
