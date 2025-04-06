@@ -161,7 +161,65 @@ The default TLS/SSL configuration is contained in the file /etc/httpd/conf.d/ssl
 
 cat /etc/httpd/conf.d/ssl.conf
 sudo vi /etc/httpd/conf.d/ssl.conf
+
+sudo vi /etc/httpd/conf.d/ssl.conf
+
+sudo vi /etc/httpd/conf.d/zvhost-fedora-webserver.gardenofrot.cc.conf 
+
 ```
+
+```conf
+        # ===============================================================
+        # Directory Locations
+        # ===============================================================
+        DirectoryIndex  index.html
+        DocumentRoot    /srv/fedora-webserver.gardenofrot.cc/htdocs
+        # Specific to default 2.4 configuration:
+        # Enable access to server-specific base file location
+        <Directory "/srv/fedora-webserver.gardenofrot.cc">
+                AllowOverride None
+                # Allow open access:
+                Require all granted
+        </Directory>
+        # Further relax access to the default document root
+        <Directory "/srv/fedora-webserver.gardenofrot.cc/htdocs">
+                #
+                # Possible values for the Options directive are "None", "All",
+                # or any combination of:
+                #   Indexes Includes FollowSymLinks SymLinksifOwnerMatch ExecCGI MultiViews
+                #
+                # Note that "MultiViews" must be named *explicitly* --- "Options All"
+                # doesn't give it to you.
+                #
+                # The Options directive is both complicated and important.  Please see
+                # http://httpd.apache.org/docs/2.4/mod/core.html#options
+                # for more information.
+                #
+                Options Indexes FollowSymLinks
+
+                #
+                # AllowOverride controls what directives may be placed in .htaccess files.
+                # It can be "All", "None", or any combination of the keywords:
+                #   Options FileInfo AuthConfig Limit
+                #
+                AllowOverride None
+
+                #
+                # Controls who can get stuff from this server:
+                # Allow open access:
+                Require all granted
+
+        </Directory>
+
+```
+## Resart httpd service
+```bash
+sudo systemctl restart httpd.service
+sudo systemctl status httpd.service
+
+```
+
+
 
 File this in the file and update it.
 
@@ -176,6 +234,12 @@ sudo firewall-cmd --reload
 ```
 
 /home/paul/vm-images/shared/packages/code
+
+```bash
+# Edit the HTTPD file
+sudo vi /etc/httpd/conf.d/zvhost-fedora-webserver.gardenofrot.cc.conf 
+sudo systemctl restart httpd.service
+```
 
 ```xml
 # Ensure that Apache listens on port 80
@@ -216,8 +280,29 @@ Add Hardware:  filesystem
 
 ## On Guest
 ```bash
-sh-5.2$ sudo mkdir /mnt/packages
-sh-5.2$ sudo mount -t virtiofs packages_tag /mnt/packages
+
+
+sudo mkdir /srv/fedora-webserver.gardenofrot.cc/htdocs/other/packages
+sudo mount -t virtiofs packages /srv/fedora-webserver.gardenofrot.cc/htdocs/other/packages
+#sudo mount -t virtiofs  -o v3,fscontext=unconfined_u:object_r:httpd_sys_content_t:s0 packages /srv/fedora-webserver.gardenofrot.cc/htdocs/other/packages
+sudo mount -t virtiofs  -o fscontext=unconfined_u:object_r:httpd_sys_content_t:s0 packages /srv/fedora-webserver.gardenofrot.cc/htdocs/other/packages
+
+
+ls -la /srv/fedora-webserver.gardenofrot.cc/htdocs/other/packages
+
+
+sudo mkdir /mnt/packages
+sudo mount -t virtiofs packages_tag /mnt/packages
+
+sudo chmod o+x /root /root/site /root/site/about
+sudo chmod o+x /mnt /mnt/packages
+
+sudo chmod o+x /srv/fedora-webserver.gardenofrot.cc/htdocs/other/packages
+sudo chmod o+x /srv/fedora-webserver.gardenofrot.cc/htdocs/other
+sudo chmod o+x /srv/fedora-webserver.gardenofrot.cc
+sudo chmod o+x /srv
+
+
 
 
 sh-5.2$ ls -la /mnt/packages/
@@ -229,3 +314,48 @@ drwxr-xr-x. 4 root       root       4096 Mar 29 16:24 code
 drwxr-xr-x. 4 root       root       4096 Mar 29 15:53 fedora
 sh-5.2$ 
 ```
+
+
+# Create Docker image rto Sync the Repos
+
+GitHub Copilot
+Here is an example of what the mirror-repo.sh file could contain. This script will sync the specified RPM repository and serve it using an HTTP server:
+
+Explanation:
+Variables:
+
+REPO_DIR: Directory where the mirrored repository will be stored.
+REPO_ID: The repository ID to sync (e.g., fedora, updates, etc.).
+LOG_FILE: Log file to capture the output of the sync process.
+Repository Sync:
+
+Uses dnf reposync to download the repository packages and metadata.
+Metadata Creation:
+
+Uses createrepo to generate repository metadata for the mirrored repository.
+HTTP Server:
+
+Starts the Apache HTTP server in the foreground to serve the mirrored repository.
+Notes:
+Replace fedora in REPO_ID with the repository you want to mirror.
+Ensure the container has the necessary permissions to write to /var/www/html/repo.
+Logs are written to /var/log/repo-sync.log for debugging purposes.
+mckeepa
+what are the commands to build the image and run the container
+
+GitHub Copilot
+Here are the commands to build the Docker image and run the container:
+
+1. Build the Docker Image
+Navigate to the directory containing the Dockerfile and run the following command:
+
+2. Run the Container
+Run the container, mapping the HTTP server's port to the host:
+
+3. Verify the HTTP Server
+After the container starts, you can verify the repository is being served by accessing it in your browser or using curl:
+
+Notes:
+Replace 8080 with a different port if needed.
+The -d flag runs the container in detached mode.
+The --name flag assigns a name to the container for easier management.
