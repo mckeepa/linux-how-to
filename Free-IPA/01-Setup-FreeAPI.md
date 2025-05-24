@@ -168,6 +168,21 @@ sudo cat /etc/hostname
 sudo hostnamectl set-hostname --pretty "ansible-01.gardenofrot.cc"
 sudo hostnamectl set-hostname --static "ansible-01.gardenofrot.cc"
 
+
+sudo systemctl enable firewalld
+# Start the firewalld service: 
+sudo systemctl start firewalld.
+# Verify that the firewall is running: 
+sudo firewall-cmd --state
+# set firewall rules
+sudo firewall-cmd --add-service=freeipa-ldap --permanent
+sudo firewall-cmd --add-service=freeipa-ldaps --permanent
+sudo firewall-cmd --add-service=dns --permanent
+sudo firewall-cmd --add-service=ntp --permanent
+sudo firewall-cmd --add-service=http --permanent
+sudo firewall-cmd --add-service=https --permanent
+sudo firewall-cmd --add-service=kerberos --permanent
+
 sudo ipa-client-install
 sudo ipa-client-install --mkhomedir --domain gardenofrot.cc --server freeipa.gardenofrot.cc 
 sudo ipa-client-install --password 'W5YpARl=7M.n' --domain example.com --server server.example.com --unattended
