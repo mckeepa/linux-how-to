@@ -1,0 +1,30 @@
+{
+  "alice": {
+    "allow": [
+      "http://google.com",
+      "https://github.com/"
+    ],
+    "deny": [
+      "http://localhost:8200",
+      "http://denied.example.com"
+    ]
+  },
+  "bob": {
+    "allow": [
+      "http://localhost:8200",
+      "http://bobsite.com"
+    ],
+    "deny": [
+      "http://example.com"
+    ]
+  },
+  "carol": {
+    "allow": [
+      "https://my.site.org/health"
+    ],
+    "deny": [
+      "http://example.com",
+      "http://localhost:8200"
+    ]
+  }
+}

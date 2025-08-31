@@ -1,0 +1,6 @@
+[alice]	ALLOWED	[0;32m	http://google.com	is accessible 	expected	[0m
+[alice]	ALLOWED	[0;32m	https://github.com/	is accessible 	expected	[0m
+[alice]	DENIED	[0;32m	http://localhost:8200	is NOT accessible 	expected	[0m
+[alice]	DENIED	[0;32m	http://denied.example.com	is NOT accessible 	expected	[0m
+[bob]	ALLOWED	[0;31m	http://localhost:8200	is NOT accessible 	unexpected!	[0m
+[bob]	ALLOWED	[0;31m	http://bobsite.com	is NOT accessible 	unexpected!	[0m
