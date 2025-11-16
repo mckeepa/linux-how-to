@@ -7,7 +7,7 @@ This process will authenticate your Linux machine with Azure DevOps using the PA
 2. Install the Client tools
 3. Login to Azure using the Command Line Interface (cli)
 4. Publish File from a directory, if artifacet repo is empty a Download with reyrun an error.
-5. Downlaod Files from artifacet repo 
+5. Download Files from artifacet repo 
 
 
 ## Generate a Personal Access Token (PAT):
