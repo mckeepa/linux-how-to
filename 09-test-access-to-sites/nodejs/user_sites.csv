@@ -1,0 +1,11 @@
+user,access,site
+#alice,allow,http://google.com
+alice,allow,https://github.com/
+alice,deny,http://localhost:8200
+alice,deny,http://denied.example.com
+bob,allow,http://localhost:8200
+bob,allow,http://bobsite.com
+bob,deny,http://example.com
+carol,allow,https://my.site.org/health
+carol,deny,http://example.com
+carol,deny,http://localhost:8200
