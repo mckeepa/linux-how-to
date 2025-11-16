@@ -1,5 +1,15 @@
 #!/bin/bash
 
+# Giving Podman access to ports below 1024
+# On Linux, unprivileged users cannot open ports below port number 1024. This limitation also applies to Podman, so by default, rootless containers cannot expose ports below port number 1024. You can remove this limitation temporarily using the following command:
+sysctl net.ipv4.ip_unprivileged_port_start=0
+
+# To remove the limitation permanently, run 
+sysctl -w net.ipv4.ip_unprivileged_port_start=0.
+# Note that this allows all unprivileged applications to bind to ports below 1024.
+
+
+
 #stop all running containers
 sudo podman stop $(sudo podman ps -q)
 sudo podman rm $(sudo podman ps -aq)
