@@ -1,0 +1,40 @@
+FROM kasmweb/core-ubuntu-jammy:1.18.0-rolling-daily
+USER root
+
+# Set the seeding directory for new user profiles
+ENV HOME /home/kasm-default-profile
+WORKDIR $HOME
+
+# 1. Install Jumpbox Tools & FreeIPA Client
+# We install remmina (with RDP/SSH plugins) and firefox
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    remmina \
+    remmina-plugin-rdp \
+    remmina-plugin-ssh \
+    firefox \
+    openssh-client \
+    freeipa-client \
+    dnsutils \
+    iputils-ping \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# 2. Create Desktop Shortcuts in the seeding profile
+# Kasm copies contents from kasm-default-profile to the user's home on first launch
+RUN mkdir -p $HOME/Desktop && \
+    cp /usr/share/applications/remmina.desktop $HOME/Desktop/ && \
+    cp /usr/share/applications/firefox.desktop $HOME/Desktop/
+
+# 3. Hardening: Remove risky tools and restrict binary permissions
+# We remove common tools often used in lateral movement
+RUN apt-get purge -y wget curl git && \
+    apt-get autoremove -y && \
+    chmod 700 /usr/bin/ssh
+
+# 4. Set ownership for the Kasm seeding process
+RUN chown -R 1000:0 $HOME && \
+    find $HOME/Desktop/ -name "*.desktop" -exec chmod +x {} \;
+
+# Revert to standard user for the running container
+ENV HOME /home/kasm-user
+WORKDIR $HOME
+USER 1000
