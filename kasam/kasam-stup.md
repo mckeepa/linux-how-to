@@ -127,64 +127,52 @@ cd kasm_release*
 
 ```
 
-Run installer:
-
-sudo bash install.sh
-
-Or unattended install:
-
+Run unattended install:
+```bash
 sudo bash install.sh --accept-eula
-
-Optional swap creation:
-
-sudo bash install.sh --accept-eula --swap-size 8192
+```
 
 Installer will:
 
-create /opt/kasm
-
-configure services
-
-install Docker images
-
-generate credentials
+ - create /opt/kasm
+ - configure services
+ - install Docker images
+ - generate credentials
 
 At the end you will see:
-
+```text
 Kasm UI: https://SERVER_IP
 Admin: admin@kasm.local
 Password: ********
 
 Save the password.
+```
 
-6. Access the Kasm Admin UI
+# Access the Kasm Admin UI
 
-Open browser:
+## Open browser:
 
 https://SERVER_IP
+https://192.168.122.228/
 
-Login using:
+## Login using:
 
 admin@kasm.local
-7. Install Workspace Images
 
-Go to:
+# Install Workspace Images
 
-Admin → Workspaces → Registry
+Go to:   Admin → Workspaces → Registry
 
 Install base images such as:
 
-Ubuntu Desktop
-
-Debian Desktop
-
-Chrome
-
-Firefox
+ - Ubuntu Desktop
+ - Debian Desktop
+ - Chrome
+ - Firefox
 
 These run as Docker containers.
 
-8. Prepare FreeIPA for Kasm LDAP
+## Prepare FreeIPA for Kasm LDAP
 
 On the FreeIPA server create a service account for Kasm.
 
@@ -196,13 +184,13 @@ ipa user-add kasmldap \
 --password
 
 Create group for VDI users:
-
+```bash
 ipa group-add kasm-users
 
-Add users:
-
+# Add users:
 ipa group-add-member kasm-users --users user1
 
+```
 Determine your LDAP base:
 
 Example:
@@ -212,12 +200,13 @@ dc=example,dc=lab
 Typical FreeIPA DN format:
 
 uid=user1,cn=users,cn=accounts,dc=example,dc=lab
-9. Test LDAP Connectivity
+
+# Test LDAP Connectivity
 
 From the Kasm server install LDAP tools:
-
+```bash 
 sudo dnf install -y openldap-clients
-
+```
 Test LDAP bind:
 
 ldapsearch -x \
@@ -277,7 +266,7 @@ Enabled
 
 Kasm supports external authentication providers like LDAP so organizations can use existing directory services for authentication and authorization.
 
-11. Map FreeIPA Groups to Kasm Groups
+# Map FreeIPA Groups to Kasm Groups
 
 Create group mapping.
 
@@ -298,7 +287,7 @@ cn=kasm-users,cn=groups,cn=accounts,dc=example,dc=lab
 
 Users in that group will automatically gain access.
 
-12. Configure Workspace Permissions
+# Configure Workspace Permissions
 
 Assign workspace access to group.
 
@@ -312,7 +301,7 @@ Permissions
 Add:
 
 FreeIPA Users
-13. Test FreeIPA Login
+# Test FreeIPA Login
 
 Log out of admin account.
 
@@ -328,7 +317,7 @@ create a user profile
 
 assign workspace permissions
 
-14. Ensure Workspace Sessions Use LDAP Identity
+# Ensure Workspace Sessions Use LDAP Identity
 
 You can expose the LDAP username inside containers using environment variables.
 
@@ -346,7 +335,7 @@ Add:
 
 This lets containers know which LDAP user launched them.
 
-15. Optional: Join Containers to FreeIPA Domain
+# Join Containers to FreeIPA Domain
 
 For full Linux desktop identity integration.
 
@@ -372,7 +361,7 @@ SSSD identity resolution
 
 FreeIPA home directories
 
-16. Verify Running Services
+# Verify Running Services
 
 Check Kasm containers:
 
@@ -380,14 +369,17 @@ docker ps
 
 Check logs:
 
+```bash
 docker logs kasm_api
-17. Security Hardening (Recommended)
+```
+
+# Security Hardening (Recommended)
 
 Disable default user accounts except admin.
 
 Kasm recommends using an external identity provider such as LDAP instead of relying on local accounts.
 
-18. Useful Admin Commands
+# Useful Admin Commands
 
 Restart Kasm stack:
 
@@ -410,20 +402,8 @@ run isolated container session
 
 Authentication, user groups, and permissions come from FreeIPA.
 
-✅ If you'd like, I can also show you:
 
-How to make Kasm workspaces automatically create FreeIPA home directories
-
-How to enable Kerberos SSO inside the VDI desktops
-
-How to scale Kasm to multiple Rocky servers
-
-How to build a persistent Linux VDI image integrated with FreeIPA
-
-Those are the key steps most enterprise deployments need next.
-
-
-# Docker File 2
+# Docker File - jumpbox
 
 ```Dockerfile
 FROM kasmweb/core-ubuntu-jammy:1.18.0-rolling-daily
@@ -468,3 +448,32 @@ WORKDIR $HOME
 USER 1000
 
 ```
+
+```bash
+docker images -a
+sudo docker images -a
+sudo docker run --rm -it custom-jumpbox:v1 /bin/bash
+sudo docker build --load -t custom-jumpbox:v1 .
+sudo docker images | grep custom-jumpbox
+docker buildx ls
+sudo docker buildx ls
+sudo docker build --output type=docker -t custom-jumpbox:v1 .
+sudo docker images
+sudo docker system info | grep -i "Data Space"
+sudo docker system info
+sudo systemctl restart docker
+sudo docker images
+sudo docker build --output type=docker -t custom-jumpbox:v1 .
+sudo docker images
+sudo docker restart kasm_agent
+sudo reboot now
+top
+sudo docker images
+sudo docker images -a
+ls
+vi dockerfile
+sudo docker build --load -t custom-jumpbox:v1 .
+sudo shutdown now
+sudo dnf update
+
+  ```
