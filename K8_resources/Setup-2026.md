@@ -55,6 +55,40 @@ sudo sysctl --system
 
 SELinux & Firewall: Most guides recommend setting SELinux to permissive and disabling firewalld to avoid connectivity issues during setup. 
 
+```bash
+#!/bin/bash
+
+# Detect if the node is a Control Plane or Worker node
+echo "Choose node type: 1) Control Plane  2) Worker Node"
+read -p "Selection: " NODE_TYPE
+
+if [ "$NODE_TYPE" == "1" ]; then
+    echo "Configuring Control Plane ports..."
+    # API Server
+    sudo firewall-cmd --permanent --add-port=6443/tcp
+    # etcd
+    sudo firewall-cmd --permanent --add-port=2379-2380/tcp
+    # Kubelet, Scheduler, Controller Manager
+    sudo firewall-cmd --permanent --add-port=10250/tcp
+    sudo firewall-cmd --permanent --add-port=10259/tcp
+    sudo firewall-cmd --permanent --add-port=10257/tcp
+elif [ "$NODE_TYPE" == "2" ]; then
+    echo "Configuring Worker Node ports..."
+    # Kubelet API
+    sudo firewall-cmd --permanent --add-port=10250/tcp
+    # NodePort Services
+    sudo firewall-cmd --permanent --add-port=30000-32767/tcp
+    sudo firewall-cmd --permanent --add-port=30000-32767/udp
+else
+    echo "Invalid selection. Exiting."
+    exit 1
+fi
+
+# Apply changes
+sudo firewall-cmd --reload
+echo "Firewall rules updated and reloaded."
+````
+
 
 ## Install Container Runtime and KubeTools 
 Container Runtime: Install containerd or cri-o. For containerd, ensure the SystemdCgroup is set to true in its configuration.
@@ -93,6 +127,31 @@ sudo firewall-cmd --reload
 ```
 
 
+
+```bash
+sudo kubeadm reset -f
+sudo rm -rf /etc/kubernetes/manifests/
+sudo rm -rf /etc/kubernetes/pki/
+sudo rm -f /etc/kubernetes/admin.conf
+sudo rm -f /etc/kubernetes/kubelet.conf
+sudo rm -f /etc/kubernetes/controller-manager.conf
+sudo rm -f /etc/kubernetes/scheduler.conf
+
+
+# Clear the etcd database:
+# This resolves the [ERROR DirAvailable--var-lib-etcd] error.
+sudo rm -rf /var/lib/etcd
+
+
+# clean cni
+sudo rm -rf /var/lib/kubelet/
+sudo rm -rf /etc/cni/net.d/
+
+#Check for processes on K8s ports:
+sudo ss -tulpn | grep -E '6443|10250|2379|2380'
+
+sudo systemctl restart containerd
+```
 
 ```bash
 sudo kubeadm init --skip-phases=addon/kube-proxy
