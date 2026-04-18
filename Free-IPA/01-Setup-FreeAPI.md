@@ -17,6 +17,8 @@ sudo cat /etc/hostname
 sudo hostnamectl set-hostname --pretty "ipa.gardenofrot.cc"
 sudo hostnamectl set-hostname --static "ipa.gardenofrot.cc"
 
+sudo hostnamectl set-hostname --pretty "$(hosname).gardenofrot.cc"
+
 sudo hostnamectl set-hostname --pretty "kali-vm.gardenofrot.cc"
 sudo hostnamectl set-hostname --static "kali-vm.gardenofrot.cc"
 ```
@@ -171,7 +173,7 @@ sudo hostnamectl set-hostname --static "ansible-01.gardenofrot.cc"
 
 sudo systemctl enable firewalld
 # Start the firewalld service: 
-sudo systemctl start firewalld.
+sudo systemctl start firewalld
 # Verify that the firewall is running: 
 sudo firewall-cmd --state
 # set firewall rules
