@@ -196,7 +196,55 @@ cilium install
 ```
 Verify: Use cilium status to confirm the network is healthy. 
 
+--------
+
+1. Install the Cilium CLI 
+Run these commands on your control-plane node to download and install the latest CLI binary:
+
+```bash
+CILIUM_CLI_VERSION=$(curl -s https://raw.githubusercontent.com/cilium/cilium-cli/main/stable.txt)
+
+curl -L --remote-name-all https://github.com/cilium/cilium-cli/releases/download/${CILIUM_CLI_VERSION}/cilium-linux-amd64.tar.gz{,.sha256sum}
+
+# verify download
+sha256sum --check cilium-linux-amd64.tar.gz.sha256sum
+
+# decommpress
+sudo tar -C /usr/local/bin -xzvf cilium-linux-amd64.tar.gz
+
+# remove compressed file
+rm cilium-linux-amd64.tar.gz{,.sha256sum}
+```
+
+## Install Cilium into the Cluster 
+Cilium auto-detects kubeadm setups. Execute the installation: 
+Kubernetes
+```bash
+cilium install
+```
+Optional (Kube-proxy Replacement): For higher performance, you can replace kube-proxy entirely using eBPF:
+```bash
+cilium install --set kubeProxyReplacement=true
+```
 
 
+Validate the Installation
+Wait for deployment, then check status: 
 
+```bash
+cilium status --wait
+```
 
+If you have multiple nodes, verify with connectivity tests: 
+
+```bash
+cilium connectivity test
+```
+
+## Enable Observability (Hubble) 
+Enable Hubble for network visibility: 
+
+```bash
+cilium hubble enable --ui
+cilium hubble ui
+```
