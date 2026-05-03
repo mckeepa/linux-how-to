@@ -166,9 +166,15 @@ Install client
 ```bash
 sudo dnf install freeipa-client -y
 
+
+# Define your variable
+NEW_HOSTNAME="ansible-01.gardenofrot.cc"
+
+# Run the commands using the variable
 sudo cat /etc/hostname
-sudo hostnamectl set-hostname --pretty "ansible-01.gardenofrot.cc"
-sudo hostnamectl set-hostname --static "ansible-01.gardenofrot.cc"
+sudo hostnamectl set-hostname --pretty "$NEW_HOSTNAME"
+sudo hostnamectl set-hostname --static "$NEW_HOSTNAME"
+
 
 
 sudo systemctl enable firewalld
