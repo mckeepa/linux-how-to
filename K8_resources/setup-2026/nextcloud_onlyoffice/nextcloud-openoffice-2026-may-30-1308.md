@@ -1,7 +1,7 @@
 # Sovereign Digital Workspace Setup Guide
 ### Nextcloud Hub & ONLYOFFICE Docs with Rootless Podman, Quadlets, and Nginx SSL on Fedora Server
 
-This blueprint delivers an enterprise-grade, error-free deployment of a secure digital workspace modeled after EU digital sovereignty frameworks. It segregates application logic into rootless container namespaces, manages services with Fedora-native **Quadlets**, unifies multi-port traffic behind an **Nginx Reverse Proxy**, and secures all traffic via local **SSL/TLS**.
+This blueprint delivers an enterprise-grade deployment of a secure digital workspace modeled after EU digital sovereignty frameworks. It segregates application logic into rootless container namespaces, manages services with Fedora-native **Quadlets**, unifies multi-port traffic behind an **Nginx Reverse Proxy**, and secures all traffic via local **SSL/TLS**.
 
 ---
 
@@ -254,27 +254,43 @@ podman exec -u www-data nextcloud-app php occ config:system:set curl.options --v
 podman exec -it onlyoffice-docs sed -i 's/"rejectUnauthorized": true/"rejectUnauthorized": false/g' /etc/onlyoffice/documentserver/default.json
 podman exec -it onlyoffice-docs supervisorctl restart all
 
-# 6. Fetch, extract, and deploy the official ONLYOFFICE connector engine plug-in
+# 6. Fetch, extract, and deploy the official ONLYOFFICE connector engine plug-in via terminal
 
 
 podman exec -it -u www-data nextcloud-app php occ app:install onlyoffice
 
+7. Pre-inject the precise verified configuration metrics straight into Nextcloud's database
+```bash
+podman exec -u www-data nextcloud-app php occ config:system:set onlyoffice DocumentServerUrl --value="gardenofrot.cc"
+podman exec -u www-data nextcloud-app php occ config:system:set onlyoffice DocumentServerInternalUrl --value="http://onlyoffice-docs/"
+podman exec -u www-data nextcloud-app php occ config:system:set onlyoffice StorageUrl --value="http://nextcloud-app/"
+podman exec -u www-data nextcloud-app php occ config:system:set onlyoffice jwt_secret --value="YourSuperSecretJWTKeyHere"
+podman exec -u www-data nextcloud-app php occ config:system:set onlyoffice jwt_header --value="Authorization"
+```
 
-podman exec -u www-data nextcloud-app php occ config:system:set onlyoffice DocumentServerUrl --value="gardenofrot.cc"podman exec -u www-data nextcloud-app php occ config:system:set onlyoffice DocumentServerInternalUrl --value="http://onlyoffice-docs/"podman exec -u www-data nextcloud-app php occ config:system:set onlyoffice StorageUrl --value="http://nextcloud-app/"podman exec -u www-data nextcloud-app php occ config:system:set onlyoffice jwt_secret --value="YourSuperSecretJWTKeyHere"podman exec -u www-data nextcloud-app php occ config:system:set onlyoffice jwt_header --value="Authorization"
+8. Perform a clean restart of the application container core
+```bash
+systemctl --user restart nextcloud-app.service
+%%MAGIT_PARSER_PROTECT%%
+```
 
-Perform a clean restart of the application container core
 
-systemctl --user restart nextcloud-app.service%%MAGIT_PARSER_PROTECT%%``
+Step 7: Complete Final Setup via the Browser UI
+Before opening a document, you must map the subdomain resolutions on the client machine and toggle the .docx data model file handler to register database hooks.
 
 Configure local host resolutions on your client machine's hosts file (C:\Windows\System32\drivers\etc\hosts or /etc/hosts):
 
+```bash
 192.168.122.199 cloud.gardenofrot.cc office.gardenofrot.cc
+```
+Open a web browser tab and navigate directly to your instance domain:
+https://gardenofrot.cc (Bypass the self-signed certificate security warning by selecting Advanced -> Proceed).
 
 
-Log in using your administration parameters:Username: adminPassword: YourSecureAdminPassword
+Log in using your administration parameters:
 
-Manage your container platform using native systemd commands:
+    Username: admin
+    Password: YourSecureAdminPassword
 
 
-Stop the Office Suite:systemctl --user stop nextcloud-app onlyoffice-docs nextcloud-dbStart the Office Suite:systemctl --user start nextcloud-db onlyoffice-docs nextcloud-appRestart the Office Suite:systemctl --user restart nextcloud-db onlyoffice-docs nextcloud-appInspect Live Log Output:journalctl --user -u nextcloud-app.service -f
-
+    
