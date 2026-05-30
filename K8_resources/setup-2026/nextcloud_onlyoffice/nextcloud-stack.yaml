@@ -1,0 +1,73 @@
+# nextcloud-stack.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nextcloud-db
+spec:
+  selector: { matchLabels: { app: nextcloud-db } }
+  template:
+    metadata: { labels: { app: nextcloud-db } }
+    spec:
+      containers:
+      - name: mariadb
+        image: mariadb:10.6
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          value: "change-me-root"
+        - name: MYSQL_DATABASE
+          value: "nextcloud"
+        - name: MYSQL_USER
+          value: "nextcloud"
+        - name: MYSQL_PASSWORD
+          value: "nextcloud-db-pass"
+        volumeMounts:
+        - name: db-data
+          mountPath: /var/lib/mysql
+      volumes:
+      - name: db-data
+        persistentVolumeClaim: { claimName: mariadb-pvc }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: nextcloud-db }
+spec:
+  ports: [{ port: 3306 }]
+  selector: { app: nextcloud-db }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nextcloud
+spec:
+  selector: { matchLabels: { app: nextcloud } }
+  template:
+    metadata: { labels: { app: nextcloud } }
+    spec:
+      containers:
+      - name: nextcloud
+        image: nextcloud:latest
+        ports: [{ containerPort: 80 }]
+        env:
+        - name: MYSQL_HOST
+          value: "nextcloud-db"
+        - name: MYSQL_DATABASE
+          value: "nextcloud"
+        - name: MYSQL_USER
+          value: "nextcloud"
+        - name: MYSQL_PASSWORD
+          value: "nextcloud-db-pass"
+        - name: NEXTCLOUD_TRUSTED_DOMAINS
+          value: "cloud.gardenofrot.cc"
+        volumeMounts:
+        - name: nc-data
+          mountPath: /var/www/html
+      volumes:
+      - name: nc-data
+        persistentVolumeClaim: { claimName: nextcloud-pvc }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: nextcloud }
+spec:
+  ports: [{ port: 80, targetPort: 80 }]
+  selector: { app: nextcloud }

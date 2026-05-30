@@ -1,0 +1,45 @@
+# nextcloud-db.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nextcloud-db-pvc
+spec:
+  accessModes: [ReadWriteOnce]
+  resources: { requests: { storage: 5Gi } }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nextcloud-db
+spec:
+  selector: { matchLabels: { app: nextcloud-db } }
+  template:
+    metadata: { labels: { app: nextcloud-db } }
+    spec:
+      containers:
+      - name: mariadb
+        image: mariadb:10.6
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          value: "your-root-password"
+        - name: MYSQL_DATABASE
+          value: "nextcloud"
+        - name: MYSQL_USER
+          value: "nextcloud"
+        - name: MYSQL_PASSWORD
+          value: "nextcloud-pass"
+        volumeMounts:
+        - name: db-data
+          mountPath: /var/lib/mysql
+      volumes:
+      - name: db-data
+        persistentVolumeClaim: { claimName: nextcloud-db-pvc }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nextcloud-db
+spec:
+  ports: [{ port: 3306 }]
+  selector: { app: nextcloud-db }
+

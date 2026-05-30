@@ -477,3 +477,99 @@ sudo shutdown now
 sudo dnf update
 
   ```
+
+
+# setup Keyclock
+
+1. Prepare the Configuration (values.yaml)Create a file named keycloak-values.yaml. You MUST configure the Ingress section so Kasm can reach Keycloak externally.
+```yaml
+# keycloak-values.yaml
+auth:
+  adminUser: admin
+  adminPassword: "ChangeMeNow123!" # Set a strong password
+  tls:
+    enabled: true # strict HTTPS is required for OIDC
+
+ingress:
+  enabled: true
+  ingressClassName: nginx # Verify your controller name (e.g., nginx, traefik)
+  hostname: keycloak.example.com # REPLACE with your actual DNS
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod # If using cert-manager
+  tls: true
+  extraTls:
+    - hosts:
+        - keycloak.example.com
+      secretName: keycloak-tls-secret
+
+# Optional: External Database (Recommended for Production)
+# postgresql:
+#   enabled: false
+# externalDatabase:
+#   host: "your-postgres-host"
+#   ...
+```
+## 2. Deploy via Helm
+```bash
+helm repo add bitnami https://charts.bitnami.com/bitnami
+helm repo update
+kubectl create namespace keycloak
+helm install keycloak bitnami/keycloak -n keycloak -f keycloak-values.yaml
+```
+### Phase 2: Connect Keycloak to FreeIPA (User Federation)
+Once Keycloak is running, log in to the admin console (https://keycloak.example.com) to bind it to FreeIPA.
+1. Create Realm: Hover over "Master" (top left), click Create Realm, name it kasm-realm.
+1. Add Provider: Go to User Federation > Add provider > ldap.
+1. Configure Connection:
+    - Vendor: Red Hat Directory Server (Crucial: This presets FreeIPA schemas).
+    - Connection URL: ldaps://ipa.example.com:636
+    - Users DN: cn=users,cn=accounts,dc=example,dc=com
+    - Bind DN: uid=admin,cn=users,cn=accounts,dc=example,dc=com (Or a service account).
+    - Bind Credential: Your FreeIPA admin password.
+1. Sync Settings:
+    - Click Test Connection and Test Authentication.
+    - Enable Periodic Changed Users Sync to keep updates live.
+    - Click Save, then Synchronize all users to pull FreeIPA users into Keycloak.
+
+## Phase 3: Configure Kasm OIDC (The Handshake)1. 
+
+1. Create Client in Keycloak
+    - Go to Clients > Create client.
+    - Client ID: kasm-workspaces
+    - Client Protocol: openid-connect
+    - Access Settings:
+        - Root URL: https://kasm.example.com (Your Kasm URL).
+        - Valid Redirect URIs: https://kasm.example.com/api/oidc_callback.Web 
+        - Origins: +.
+    - Capability Config: Turn Client authentication ON (Authorization Code Flow).
+    - Credentials Tab: Copy the Client Secret.
+    
+1. Map FreeIPA Groups (Critical)
+To use your FreeIPA groups in Kasm permissions:
+    - In the Clients settings for kasm-workspaces, go to the Mappers tab.
+    - Create Mapper > Group Membership.
+    - Name: groups
+    - Token Claim Name: groups
+    - Add to ID token: On.
+    - Add to access token: On.
+
+1. Configure Kasm
+    - Log into Kasm as Admin > Authentication > OpenID > Add Config.
+      
+      
+    | Setting | Value |
+    |---------|-------|
+    |Display Name | Keycloak|
+    |Client ID | kasm-workspaces|
+    |Client Secret|(Paste from Keycloak)|
+    |Authorization URL|https://keycloak.example.com/realms/kasm-realm/protocol/openid-connect/auth | 
+    Token URL | https://keycloak.example.com/realms/kasm-realm/protocol/openid-connect/token|
+    |User Info URL| https://keycloak.example.com/realms/kasm-realm/protocol/openid-connect/userinfo|
+    |Groups Attribute| groups (Matches the mapper created above)|
+    
+  # Verification
+    1. Logout of Kasm.
+    1. You should see a "Keycloak" button.
+    1. Clicking it should redirect to Keycloak, allow you to login with FreeIPA credentials, and redirect back to Kasm logged in.
+    
+  Troubleshooting: If you get a "Invalid Redirect URI" error, ensure the Valid Redirect URIs in Keycloak exactly matches the URL Kasm sends (check the browser URL bar during the error).
