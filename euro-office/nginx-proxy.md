@@ -431,7 +431,7 @@ Now, link your domain to the EuroOffice and Open-Cloud backend instances.
 
 ------------------------------
 ## Step 6: Connect Open-Cloud to EuroOffice
-Log into your Open-Cloud/Nextcloud instance via your browser. Navigate to the EuroOffice integration settings and update the server address field to your official new production address: https://gardenofrot.cc.
+Log into your Open-Cloud/Nextcloud instance via your browser. Navigate to the EuroOffice integration settings and update the server address field to your official new production address: https://office.gardenofrot.cc.
 Which DNS provider (Cloudflare, Namecheap, AWS, etc.) are you using for gardenofrot.cc? I can give you the exact steps to set up the DNS challenge API tokens for your SSL certificate. [18] 
 
 [1] [https://www.reddit.com](https://www.reddit.com/r/homelab/comments/17uf2dp/using_reverse_proxy_for_home_server/)

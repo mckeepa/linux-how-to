@@ -13,7 +13,7 @@ This documentation outlines the production architecture, configuration details, 
 | **LXC Host Container IP**| `192.168.0.123` (Unprivileged Linux Container Environment) |
 | **Reverse Proxy Host VM**| `192.168.0.101` (External Nginx Reverse Proxy Server Engine) |
 | **Local Subnet Realm**   | `gardenofrot.cc` |
-| **Authentication FQDN**  | `https://gardenofrot.cc` |
+| **Authentication FQDN**  | `https://authentik.gardenofrot.cc` |
 | **LDAP Engine Ports**    | Standard TCP Port `3389` (LDAP) / Secure TCP Port `6636` (LDAPS) |
 
 ---
@@ -159,7 +159,7 @@ services:
     extra_hosts:
       - "authentik.gardenofrot.cc:192.168.0.101"
     environment:
-      AUTHENTIK_HOST: https://gardenofrot.cc
+      AUTHENTIK_HOST: https://authentik.gardenofrot.cc
       AUTHENTIK_INSECURE: "false"
       AUTHENTIK_TOKEN: "ak-outpost-embedded-token-password-string-goes-here"
 ```

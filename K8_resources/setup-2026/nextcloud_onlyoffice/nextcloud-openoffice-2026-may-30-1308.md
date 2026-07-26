@@ -8,8 +8,8 @@ This blueprint delivers an enterprise-grade deployment of a secure digital works
 ## 🏗️ Architecture Blueprint & Parameters
 *   **Host OS**: Fedora Server (Fresh, non-root user execution context)
 *   **Target Domain Layout**:
-    *   Nextcloud Workspace Portal: `https://gardenofrot.cc`
-    *   ONLYOFFICE Document Server: `https://gardenofrot.cc`
+    *   Nextcloud Workspace Portal: `https://office.gardenofrot.cc`
+    *   ONLYOFFICE Document Server: `https://office.gardenofrot.cc`
 *   **Internal Podman Overlay Network**: `nextcloud-net` (Handled natively via Systemd)
 *   **Host Physical Network IP Mapping Reference**: `192.168.122.199`
 
@@ -284,7 +284,7 @@ Configure local host resolutions on your client machine's hosts file (C:\Windows
 192.168.122.199 cloud.gardenofrot.cc office.gardenofrot.cc
 ```
 Open a web browser tab and navigate directly to your instance domain:
-https://gardenofrot.cc (Bypass the self-signed certificate security warning by selecting Advanced -> Proceed).
+https://office.gardenofrot.cc (Bypass the self-signed certificate security warning by selecting Advanced -> Proceed).
 
 
 Log in using your administration parameters:
