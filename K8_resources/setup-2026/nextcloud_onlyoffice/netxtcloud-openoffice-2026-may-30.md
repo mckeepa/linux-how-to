@@ -206,3 +206,100 @@ Your stack is now completely automated under systemd. Manage container lifecycle
   `systemctl --user restart nextcloud-db onlyoffice-docs nextcloud-app`
 * **Inspect Live Web Logs**: 
   `journalctl --user -u nextcloud-app.service -f`
+
+
+-----------------
+# update 5 Aug 2026
+
+# Migration Log: Deploying Clean Production Euro-Office with Nextcloud AIO
+
+This document chronicles the step-by-step infrastructure corrections required to decommission a broken, example-dependent standalone Euro-Office/OnlyOffice instance and initialize a pristine production setup via Nextcloud All-in-One (AIO) behind an Nginx reverse proxy.
+
+---
+
+## 1. Initial State & Troubleshooting Discoveries
+* **Original Setup:** Euro-Office was deployed as standalone containers (`ghcr.io/euro-office/documentserver`) via manually written Docker Compose files inside an Ubuntu LXC container (`192.168.0.116`).
+* **The Error:** Accessing `https://gardenofrot.cc` or clicking the administrative utility actions resulted in a browser **Server Not Found** or **HTTP 502 Bad Gateway** loop.
+* **Core Issues Discovered:**
+  1. **DNS Mismatch:** Laptop network interfaces were failing standard `getaddrinfo` lookups for subdomains.
+  2. **Application Crashes:** The backend standalone document server was crashing on startup due to misaligned folder parameters inside the Docker volume mount flags.
+  3. **Architecture Context:** The primary objective was discovered to match a **Nextcloud AIO (All-in-One)** deployment lifecycle on host `192.168.0.136`. Nextcloud AIO handles office container layers natively, rendering standalone background configurations obsolete.
+
+---
+
+## 2. Step-by-Step Resolution Run
+
+### Step 2.1: Decommissioning the Legacy Standalone Workspace
+To prevent network port collisions (`8080`, `8443`) inside the local subnet, the broken standalone example instance was fully wiped.
+```bash
+# Executed on the euro-office LXC host (192.168.0.116)
+cd /opt/eurooffice/
+docker compose down -v
+docker volume rm eurooffice_eurooffice_data eurooffice_eurooffice_log
+```
+
+### Step 2.2: Hardcoding Local Client DNS Resolution
+To resolve browser resolution issues, the local developer client machine (`laptop-darp9`) was explicitly updated to direct subdomain traffic to the primary network entry point.
+```bash
+# Executed on laptop-darp9
+sudo nano /etc/hosts
+```
+The following string maps were appended to ensure internal resolution integrity:
+```text
+192.168.0.101 office.gardenofrot.cc cloud.gardenofrot.cc nginx-proxy.gardenofrot.cc
+```
+The client DNS caching stack was then cleanly flushed:
+```bash
+sudo resolvectl flush-caches
+```
+
+### Step 2.3: Upgrading the Nextcloud AIO Mastercontainer
+Navigating to the Nextcloud AIO master controller interface (`http://192.168.0.136:8080`) revealed a locked management framework interface requiring a core infrastructure update.
+1. Authenticated into the management web interface using the AIO instance master passphrase.
+2. Clicked **Update mastercontainer** to safely transition the environment from lifecycle `v13.3.1` up to production layout `v13.4.0`.
+
+### Step 2.4: Bypassing Public Ingress DNS Check constraints
+Because the homelab utilizes a private split-horizon layout or internal IP scheme, Nextcloud AIO's built-in public domain validation routine threw an internet check validation error block. 
+
+To bypass this check, the master container infrastructure on the `nextcloud` host (`192.168.0.136`) was cleanly re-initialized with an explicit validation override environment key:
+
+```bash
+# Executed on the nextcloud host machine (192.168.0.136)
+docker stop nextcloud-aio-mastercontainer
+docker rm nextcloud-aio-mastercontainer
+
+docker run \
+--sig-proxy=false \
+--name nextcloud-aio-mastercontainer \
+--restart always \
+-p 8080:8080 \
+-e SKIP_DOMAIN_VALIDATION=true \
+-v nextcloud_aio_mastercontainer:/mnt/docker-aio-config \
+-v /var/run/docker.sock:/var/run/docker.sock:ro \
+-d nextcloud/all-in-one:latest
+```
+
+### Step 2.5: Initializing the Pristine Production Addon Space
+1. Refreshed the browser dashboard access viewport at `http://192.168.0`.
+2. Submitted the primary production domain name value: **`cloud.gardenofrot.cc`**.
+3. With validation checks safely bypassed, the dashboard loaded the native core **Optional containers selection checklist**.
+4. Selected the tailored production workspace radio layout option: **"Nextcloud Office powered by Euro-Office"**.
+5. Clicked **Save changes** followed by **Download and start containers** to allow the background daemon to pull clean production binaries without pre-built demo templates.
+
+---
+
+## 3. Post-Installation Verification Benchmarks
+Once the active image downloads finish, the deployment sequence completes by ensuring the following handshakes are successful:
+
+1. **Internal Application Status Endpoint:** 
+   ```bash
+   curl -I https://gardenofrot.cc
+
+#next clound
+   https://192.168.0.136:8080/containers
+
+   ```
+   *Expected Outcome:* `HTTP/1.1 200 OK` (with text payload rendering `true`).
+2. **Nextcloud Panel Handshake Integration:**
+   * Access `https://gardenofrot.cc` → **Administration settings** → **Nextcloud Office**.
+   * Nextcloud AIO completely automates internal variable injection, providing a clean deployment devoid of template mock users, pre-built schemas, or placeholder assets.
