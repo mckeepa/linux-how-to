@@ -369,20 +369,22 @@ LOCAL_EOF
 # 2. ONLYOFFICE Document Server definition
 cat << 'LOCAL_EOF' > onlyoffice-docs.container
 [Unit]
-Description=ONLYOFFICE Document Server
+Description=Sovereign Euro-Office Document Engine
+After=nextcloud-net-network.service
+Requires=nextcloud-net-network.service
 
 [Container]
 ContainerName=onlyoffice-docs
-Image=docker.io/onlyoffice/documentserver:latest
+# Swaps upstream ONLYOFFICE for the official European-governed Nextcloud AIO Office suite
+Image=docker.io/nextcloud/aio-collabora:latest
 Network=nextcloud-net
-PublishPort=8081:80
-Volume=oo-data:/var/www/onlyoffice/Data:Z
-Volume=oo-logs:/var/log/onlyoffice:Z
-Environment=JWT_ENABLED=true JWT_SECRET=YourSuperSecretJWTKeyHere JWT_HEADER=Authorization
+PublishPort=8081:9980
+Environment=allow_not_encrypted=true
 
 [Install]
 WantedBy=default.target
 LOCAL_EOF
+
 
 # 3. Nextcloud Core App Engine definition
 cat << 'LOCAL_EOF' > nextcloud-app.container
@@ -453,6 +455,74 @@ chmod +x step4_quadlets.sh
 
 # Run the updated runner script
 ./step4_quadlets.sh
+
+```
+
+```bash
+
+# 1. Correct the public DocumentServerUrl parameter to use the office subdomain
+export MY_DOMAIN="gardenofrot.cc"
+
+echo "-> Linking Nextcloud to the correct Euro-Office subdomain..."
+podman exec -u www-data nextcloud-app php occ config:app:set eurooffice DocumentServerUrl --value="https://office.${MY_DOMAIN}/"
+
+# 2. Re-verify the advanced internal routing endpoints are intact
+podman exec -u www-data nextcloud-app php occ config:app:set eurooffice DocumentServerInternalUrl --value="http://onlyoffice-docs/"
+podman exec -u www-data nextcloud-app php occ config:app:set eurooffice StorageUrl --value="http://nextcloud-app/"
+
+# 1. Establish absolute systemd environment linkages for Debian 13
+export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+export DBUS_SESSION_BUS_ADDRESS="unix:path=${XDG_RUNTIME_DIR}/bus"
+
+echo "=== Aligning Core Security Matrix and Proxy Frames ==="
+
+# 2. Force Nextcloud to strictly trust HTTPS proxy headers globally
+podman exec -u www-data nextcloud-app php occ config:system:set overwritehost --value="nextcloud.gardenofrot.cc"
+podman exec -u www-data nextcloud-app php occ config:system:set overwriteprotocol --value="https"
+podman exec -u www-data nextcloud-app php occ config:system:set overwrite.cli.url --value="https://nextcloud.gardenofrot.cc/"
+
+# 3. Explicitly whitelist the ONLYOFFICE subdomain inside Nextcloud's security headers
+podman exec -u www-data nextcloud-app php occ config:app:set eurooffice intrusion_detection_whitelist --value="https://office.gardenofrot.cc" || true
+
+# 4. Cleanly power-cycle the stack to flush memory states
+echo "-> Cycling application containers..."
+systemctl --user restart nextcloud-app.service onlyoffice-docs.service
+##############
+
+# 1. Establish absolute systemd environment linkages for Debian 13
+export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+export DBUS_SESSION_BUS_ADDRESS="unix:path=${XDG_RUNTIME_DIR}/bus"
+
+echo "-> Executing Mimetype database migration repair loops..."
+podman exec -u www-data nextcloud-app php occ maintenance:repair --include-expensive
+
+echo "-> Registering a persistent nightly 2:00 AM maintenance window..."
+# Setting the value to 2 maps to 02:00 UTC/Local depending on container clock configurations
+podman exec -u www-data nextcloud-app php occ config:system:set maintenance_window_start --value=2 --type=integer
+
+###############
+
+
+```
+
+# Nginx 
+
+Log into your nginx-proxy VM (192.168.0.101) via SSH, and run this block:
+
+```bash
+# Define your domain name environment variable
+export MY_DOMAIN="gardenofrot.cc"
+
+# Inject the required HSTS security header directly into the Nextcloud 443 block
+sudo sed -i '/server_name nextcloud.'"${MY_DOMAIN}"';/a \    add_header Strict-Transport-Security "max-age=15552000; includeSubDomains; preload;" always;' /etc/nginx/sites-available/office.conf
+
+# Test your Nginx configuration syntax
+sudo nginx -t
+
+# Reload Nginx to apply the security header immediately
+sudo systemctl reload nginx
+
+##############
 
 ```
 
