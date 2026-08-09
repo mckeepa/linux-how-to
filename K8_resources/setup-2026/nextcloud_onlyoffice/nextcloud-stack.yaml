@@ -13,13 +13,13 @@ spec:
         image: mariadb:10.6
         env:
         - name: MYSQL_ROOT_PASSWORD
-          value: "change-me-root"
+          value: "<REDACTED_SECRET>"
         - name: MYSQL_DATABASE
           value: "nextcloud"
         - name: MYSQL_USER
           value: "nextcloud"
         - name: MYSQL_PASSWORD
-          value: "nextcloud-db-pass"
+          value: "<REDACTED_SECRET>"
         volumeMounts:
         - name: db-data
           mountPath: /var/lib/mysql
@@ -55,7 +55,7 @@ spec:
         - name: MYSQL_USER
           value: "nextcloud"
         - name: MYSQL_PASSWORD
-          value: "nextcloud-db-pass"
+          value: "<REDACTED_SECRET>"
         - name: NEXTCLOUD_TRUSTED_DOMAINS
           value: "cloud.gardenofrot.cc"
         volumeMounts:

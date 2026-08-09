@@ -87,7 +87,7 @@ Network=nextcloud-net.network
 Volume=nc-db-data:/var/lib/postgresql/data:Z
 Environment=POSTGRES_DB=nextcloud
 Environment=POSTGRES_USER=nextcloud_user
-Environment=POSTGRES_PASSWORD=YourSecurePasswordHere
+Environment=POSTGRES_PASSWORD=<REDACTED_SECRET>
 
 [Install]
 WantedBy=default.target
@@ -108,7 +108,7 @@ AddHost=office.gardenofrot.cc:192.168.122.199
 Volume=oo-data:/var/www/onlyoffice/Data:Z
 Volume=oo-logs:/var/log/onlyoffice:Z
 Environment=JWT_ENABLED=true
-Environment=JWT_SECRET=YourSuperSecretJWTKeyHere
+Environment=JWT_SECRET=<REDACTED_SECRET>
 Environment=JWT_HEADER=Authorization
 
 [Install]
@@ -133,9 +133,9 @@ Volume=nc-app-config:/var/www/html/config:Z
 Environment=POSTGRES_HOST=nextcloud-db
 Environment=POSTGRES_DB=nextcloud
 Environment=POSTGRES_USER=nextcloud_user
-Environment=POSTGRES_PASSWORD=YourSecurePasswordHere
+Environment=POSTGRES_PASSWORD=<REDACTED_SECRET>
 Environment=NEXTCLOUD_ADMIN_USER=admin
-Environment=NEXTCLOUD_ADMIN_PASSWORD=YourSecureAdminPassword
+Environment=NEXTCLOUD_ADMIN_PASSWORD=<REDACTED_SECRET>
 
 [Install]
 WantedBy=default.target
@@ -264,7 +264,7 @@ podman exec -it -u www-data nextcloud-app php occ app:install onlyoffice
 podman exec -u www-data nextcloud-app php occ config:system:set onlyoffice DocumentServerUrl --value="gardenofrot.cc"
 podman exec -u www-data nextcloud-app php occ config:system:set onlyoffice DocumentServerInternalUrl --value="http://onlyoffice-docs/"
 podman exec -u www-data nextcloud-app php occ config:system:set onlyoffice StorageUrl --value="http://nextcloud-app/"
-podman exec -u www-data nextcloud-app php occ config:system:set onlyoffice jwt_secret --value="YourSuperSecretJWTKeyHere"
+podman exec -u www-data nextcloud-app php occ config:system:set onlyoffice jwt_secret --value="<REDACTED_SECRET>"
 podman exec -u www-data nextcloud-app php occ config:system:set onlyoffice jwt_header --value="Authorization"
 ```
 
@@ -290,7 +290,7 @@ https://office.gardenofrot.cc (Bypass the self-signed certificate security warni
 Log in using your administration parameters:
 
     Username: admin
-    Password: YourSecureAdminPassword
+    Password: <REDACTED_SECRET>
 
 
     

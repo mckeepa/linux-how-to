@@ -10,7 +10,7 @@ Network=nextcloud-net
 PublishPort=8080:80
 Volume=nc-app-data:/var/www/html:Z
 Volume=nc-app-config:/var/www/html/config:Z
-Environment=POSTGRES_HOST=nextcloud-db POSTGRES_DB=nextcloud POSTGRES_USER=nextcloud_user POSTGRES_PASSWORD=YourSecurePasswordHere NEXTCLOUD_ADMIN_USER=admin NEXTCLOUD_ADMIN_PASSWORD=YourSecureAdminPassword
+Environment=POSTGRES_HOST=nextcloud-db POSTGRES_DB=nextcloud POSTGRES_USER=nextcloud_user POSTGRES_PASSWORD=<REDACTED_SECRET> NEXTCLOUD_ADMIN_USER=admin NEXTCLOUD_ADMIN_PASSWORD=<REDACTED_SECRET>
 
 [Install]
 WantedBy=default.target

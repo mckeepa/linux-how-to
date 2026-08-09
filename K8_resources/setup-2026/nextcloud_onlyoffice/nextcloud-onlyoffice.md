@@ -31,13 +31,13 @@ spec:
         image: mariadb:10.6
         env:
         - name: MYSQL_ROOT_PASSWORD
-          value: "secret-root-pass"
+          value: "<REDACTED_SECRET>"
         - name: MYSQL_DATABASE
           value: "nextcloud"
         - name: MYSQL_USER
           value: "nextcloud"
         - name: MYSQL_PASSWORD
-          value: "nextcloud-db-pass"
+          value: "<REDACTED_SECRET>"
         volumeMounts:
         - name: db-data
           mountPath: /var/lib/mysql
@@ -89,7 +89,7 @@ spec:
         - name: MYSQL_USER
           value: "nextcloud"
         - name: MYSQL_PASSWORD
-          value: "nextcloud-db-pass"
+          value: "<REDACTED_SECRET>"
         - name: NEXTCLOUD_TRUSTED_DOMAINS
           value: "cloud.gardenofrot.cc"
         volumeMounts:
@@ -116,7 +116,7 @@ spec:
         - name: JWT_ENABLED
           value: "true"
         - name: JWT_SECRET
-          value: "garden-secret-key"
+          value: "<REDACTED_SECRET>"
 ---
 apiVersion: v1
 kind: Service

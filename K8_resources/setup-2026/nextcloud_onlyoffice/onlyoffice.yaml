@@ -16,7 +16,7 @@ spec:
         - name: JWT_ENABLED
           value: "true"
         - name: JWT_SECRET
-          value: "your-secure-jwt-secret" # Change this!
+          value: "<REDACTED_SECRET>" # Change this!
 ---
 apiVersion: v1
 kind: Service

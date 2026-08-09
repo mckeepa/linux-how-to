@@ -339,7 +339,7 @@ ContainerName=nextcloud-db
 Image=docker.io/library/postgres:15-alpine
 Network=nextcloud-net
 Volume=nc-db-data:/var/lib/postgresql/data:Z
-Environment=POSTGRES_DB=nextcloud POSTGRES_USER=nextcloud_user POSTGRES_PASSWORD=YourSecurePasswordHere
+Environment=POSTGRES_DB=nextcloud POSTGRES_USER=nextcloud_user POSTGRES_PASSWORD=<REDACTED_SECRET>
 
 [Install]
 WantedBy=default.target
@@ -384,7 +384,7 @@ Volume=nc-app-config:/var/www/html/config:Z
 AddHost=office.gardenofrot.cc:192.168.0.101
 AddHost=nextcloud.gardenofrot.cc:192.168.0.101
 
-Environment=POSTGRES_HOST=nextcloud-db POSTGRES_DB=nextcloud POSTGRES_USER=nextcloud_user POSTGRES_PASSWORD=YourSecurePasswordHere NEXTCLOUD_ADMIN_USER=admin NEXTCLOUD_ADMIN_PASSWORD=YourSecureAdminPassword
+Environment=POSTGRES_HOST=nextcloud-db POSTGRES_DB=nextcloud POSTGRES_USER=nextcloud_user POSTGRES_PASSWORD=<REDACTED_SECRET> NEXTCLOUD_ADMIN_USER=admin NEXTCLOUD_ADMIN_PASSWORD=<REDACTED_SECRET>
 
 [Install]
 WantedBy=default.target
@@ -642,7 +642,7 @@ podman exec -u www-data nextcloud-app php occ config:app:set onlyoffice Document
 
 echo "-> Injecting secure JWT authentication secret key..."
 # Force overwrites the internal app value to clear browser defaults
-podman exec -u www-data nextcloud-app php occ config:app:set onlyoffice DocumentServerSecret --value="YourSuperSecretJWTKeyHere"
+podman exec -u www-data nextcloud-app php occ config:app:set onlyoffice DocumentServerSecret --value="<REDACTED_SECRET>"
 
 echo "-> Mapping advanced internal network request routing hooks..."
 podman exec -u www-data nextcloud-app php occ config:app:set onlyoffice DocumentServerInternalUrl --value="http://onlyoffice-docs/"
@@ -688,12 +688,12 @@ Admin panel is not need as it all on one server
 
 
    1. Open the browser and go to the public address: https://yourdomain.com
-   2. Authenticate using the deployment credentials (admin / YourSecureAdminPassword).
+2. Authenticate using the deployment credentials (admin / <REDACTED_SECRET>).
    3. Click the profile icon (top right corner) ➔ Administration settings.
    4. Select ONLYOFFICE on the bottom left navigation tree menu.
    5. Expand the Advanced server settings tab to bypass proxy loop limits:
    * ONLYOFFICE Docs address: https://yourdomain.com
-      * Secret key: YourSuperSecretJWTKeyHere
+    * Secret key: <REDACTED_SECRET>
       * ONLYOFFICE Docs address for internal requests from the server: http://onlyoffice-docs/
       * Nextcloud address for internal requests from the document server: http://nextcloud-app/
    6. Press Save. the collaborative workspace environment is ready.
@@ -724,7 +724,7 @@ Navigate to **Administration settings** -> **ONLYOFFICE** via the left-hand side
 ### Server Settings Block
 * **ONLYOFFICE Docs address**: `https://gardenofrot.cc`
   *(Note: This is the external HTTPS URI accessed by your web browser)*
-* **Secret key**: `YourSuperSecretJWTKeyHere`
+* **Secret key**: `<REDACTED_SECRET>`
   *(Note: Must exactly match the JWT_SECRET environment flag declared in your Quadlet container file)*
 
 ### Advanced Server Settings Dropdown

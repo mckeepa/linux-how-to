@@ -10,7 +10,7 @@ Network=nextcloud-net
 PublishPort=8081:80
 Volume=oo-data:/var/www/onlyoffice/Data:Z
 Volume=oo-logs:/var/log/onlyoffice:Z
-Environment=JWT_ENABLED=true JWT_SECRET=YourSuperSecretJWTKeyHere JWT_HEADER=Authorization
+Environment=JWT_ENABLED=true JWT_SECRET=<REDACTED_SECRET> JWT_HEADER=Authorization
 
 [Install]
 WantedBy=default.target

@@ -8,7 +8,7 @@ ContainerName=nextcloud-db
 Image=docker.io/library/postgres:15-alpine
 Network=nextcloud-net
 Volume=nc-db-data:/var/lib/postgresql/data:Z
-Environment=POSTGRES_DB=nextcloud POSTGRES_USER=nextcloud_user POSTGRES_PASSWORD=YourSecurePasswordHere
+Environment=POSTGRES_DB=nextcloud POSTGRES_USER=nextcloud_user POSTGRES_PASSWORD=<REDACTED_SECRET>
 
 [Install]
 WantedBy=default.target

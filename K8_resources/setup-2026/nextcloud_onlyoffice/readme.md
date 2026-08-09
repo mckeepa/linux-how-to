@@ -172,6 +172,15 @@ Manage the container operational boundaries natively using systemd user tooling 
 EOF
 
 ------------------------------
+## 🔐 Secrets handling
+
+This repository must not contain real secrets. All passwords, JWT secrets and admin credentials in the examples are redacted. Deployments should provide real secrets via Kubernetes Secrets, an external vault, or environment injection at runtime. See `nextcloud-secrets.example.yaml` for a template to create Kubernetes Secrets and update manifests to use `valueFrom.secretKeyRef`.
+
+Follow these steps after editing the example manifest:
+- Populate secure values into `nextcloud-secrets.example.yaml` or create secrets directly with `kubectl create secret`.
+- Update Deployment manifests to reference secrets with `valueFrom.secretKeyRef` instead of hard-coded `value:` fields.
+- Rotate any credentials if they were previously used in production and were committed accidentally.
+
 ## 📂 Your Completed Version-Controlled Workspace Blueprint
 Run git status right now, and you will see your production tracking manifest ready for staging:
 
