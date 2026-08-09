@@ -1,0 +1,14 @@
+[Unit]
+Description=Nextcloud PostgreSQL Database
+After=nextcloud-net-network.service
+Requires=nextcloud-net-network.service
+
+[Container]
+ContainerName=nextcloud-db
+Image=docker.io/library/postgres:15-alpine
+Network=nextcloud-net
+Volume=nc-db-data:/var/lib/postgresql/data:Z
+Environment=POSTGRES_DB=nextcloud POSTGRES_USER=nextcloud_user POSTGRES_PASSWORD=YourSecurePasswordHere
+
+[Install]
+WantedBy=default.target

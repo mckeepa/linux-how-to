@@ -1,0 +1,5 @@
+[Unit]
+Description=Sovereign Nextcloud Cloud Network Mesh
+
+[Network]
+NetworkName=nextcloud-net

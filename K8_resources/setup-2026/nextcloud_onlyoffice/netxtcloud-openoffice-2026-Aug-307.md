@@ -25,34 +25,13 @@ graph LR
         end
     end
 
-    %% Flow Connections with Colour-Coded Protocols
+    %% Flow Connections
     Public -->|HTTPS / WSS| NP_Details
-    NP_Details -->|Proxy Pass: HTTP| NC_App
-    NP_Details -->|Proxy Pass: HTTP + WS Upgrade| OO_Docs
-    NC_App <-->|Internal Network Traffic| NC_DB
-    NC_App <-->|Cross-Origin JWT Validation| OO_Docs
-
-    %% Colour Legend Node
-    subgraph Legend ["Traffic Protocol Legend"]
-        L1["== HTTPS / WSS (External Secure) =="]
-        L2["-- HTTP / WS (Internal Unencrypted) --"]
-    end
-
-    %% Styling Elements
-    linkStyle 0 stroke:#00ff00,stroke-width:3px;
-    linkStyle 1 stroke:#ff9900,stroke-width:2px;
-    linkStyle 2 stroke:#ff9900,stroke-width:2px;
-    linkStyle 3 stroke:#0000ff,stroke-width:2px;
-    linkStyle 4 stroke:#0000ff,stroke-width:2px;
-
-    style Public fill:#f9f9f9,stroke:#333,stroke-width:1px
-    style NginxProxy fill:#fff,stroke:#333,stroke-width:1px
-    style EuroOffice fill:#fff,stroke:#333,stroke-width:1px
-    style PodmanNet fill:#f5f5f5,stroke:#333,stroke-width:1px,stroke-dasharray: 5 5
-    style Legend fill:#fff,stroke:#ccc,stroke-width:1px
-    style L1 fill:#e6ffe6,stroke:#00ff00,stroke-width:1px
-    style L2 fill:#fff2cc,stroke:#ff9900,stroke-width:1px
-
+    NP_Details -->|https://gardenofrot.cc| NC_App
+    NP_Details -->|https://gardenofrot.cc| OO_Docs
+    NC_App <--> NC_DB
+    NC_App -->|Internal Mesh HTTP| OO_Docs
+    OO_Docs -->|Internal Mesh HTTP| NC_App
 
 ```
 
@@ -377,6 +356,7 @@ Requires=nextcloud-net-network.service
 ContainerName=onlyoffice-docs
 # Swaps upstream ONLYOFFICE for the official European-governed Nextcloud AIO Office suite
 Image=docker.io/nextcloud/aio-collabora:latest
+# Image=docker.io/onlyoffice/documentserver:latest
 Network=nextcloud-net
 PublishPort=8081:9980
 Environment=allow_not_encrypted=true
@@ -718,6 +698,49 @@ Admin panel is not need as it all on one server
       * Nextcloud address for internal requests from the document server: http://nextcloud-app/
    6. Press Save. the collaborative workspace environment is ready.
 
+------------------
+
+------------------------------
+
+# Part 3: Nextcloud Integration & Post-Deployment Tuning
+
+Once the Podman Quadlets are running and your Nginx configuration blocks are enabled, you must link the applications. Follow these steps to configure the integration, resolve Mixed Active Content errors, and prevent app framework conflicts.
+
+## 1. Whitelist Local Loopback Container Networks
+By default, Nextcloud blocks outgoing HTTP requests destined for local subnets or private address spaces. Run this command inside your application terminal to allow Nextcloud to talk directly to your ONLYOFFICE container via the native Podman network mesh:
+
+```bash
+podman exec --user www-data nextcloud-app php occ config:system:set allow_local_remote_servers --value=true --type=boolean
+```
+
+## 2. Enable the Integration Connector App
+1. Log into your Nextcloud instance web UI as an **Administrator**.
+2. Click your profile icon in the top-right corner and select **Apps**.
+3. Locate **ONLYOFFICE** under disabled apps (or search for it using the magnifying glass tool) and select **Download and enable**.
+
+## 3. Split-Horizon URI Network Configuration
+Navigate to **Administration settings** -> **ONLYOFFICE** via the left-hand sidebar menu. To bypass browser mixed content blocks while routing heavy file traffic locally inside the network, populate the advanced fields exactly as shown below:
+
+### Server Settings Block
+* **ONLYOFFICE Docs address**: `https://gardenofrot.cc`
+  *(Note: This is the external HTTPS URI accessed by your web browser)*
+* **Secret key**: `YourSuperSecretJWTKeyHere`
+  *(Note: Must exactly match the JWT_SECRET environment flag declared in your Quadlet container file)*
+
+### Advanced Server Settings Dropdown
+* **ONLYOFFICE Docs address for internal requests from the server**: `http://onlyoffice-docs/`
+  *(Note: Routes deep-backend API callbacks across the internal network mesh using unencrypted HTTP)*
+* **Server address for internal requests from ONLYOFFICE Docs**: `http://nextcloud-app/`
+  *(Note: Directs ONLYOFFICE to fetch the target binary assets directly from Nextcloud's local port)*
+
+Click the blue **Save** button. The document parameters will populate downward on successful validation. Ensure the check box next to **`docx`** (along with `xlsx` or `pptx`) is enabled.
+
+# ??. Deactivate Overlapping Layout Frameworks
+To ensure Nextcloud correctly routes web editing tasks away from alternative engines like Collabora/Nextcloud Office, deactivate conflicting document apps:
+1. Navigate to **Administration settings** -> **Nextcloud Office**.
+2. Scroll to the section titled **The default application for opening the format**.
+3. **Uncheck** the parameter box for **`docx`** to hand layout rendering entirely to ONLYOFFICE.
+![Project Screenshot](./images/Screenshot_2026-08-09_12-28-44.png)
 
 ------------------
 ## Part 8: Master script and readme.

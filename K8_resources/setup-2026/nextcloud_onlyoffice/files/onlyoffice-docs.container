@@ -1,0 +1,16 @@
+[Unit]
+Description=ONLYOFFICE Document Server
+After=nextcloud-net-network.service
+Requires=nextcloud-net-network.service
+
+[Container]
+ContainerName=onlyoffice-docs
+Image=docker.io/onlyoffice/documentserver:latest
+Network=nextcloud-net
+PublishPort=8081:80
+Volume=oo-data:/var/www/onlyoffice/Data:Z
+Volume=oo-logs:/var/log/onlyoffice:Z
+Environment=JWT_ENABLED=true JWT_SECRET=YourSuperSecretJWTKeyHere JWT_HEADER=Authorization
+
+[Install]
+WantedBy=default.target
