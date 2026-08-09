@@ -10,7 +10,9 @@ Network=nextcloud-net
 PublishPort=8081:80
 Volume=oo-data:/var/www/onlyoffice/Data:Z
 Volume=oo-logs:/var/log/onlyoffice:Z
-Environment=JWT_ENABLED=true JWT_SECRET=<REDACTED_SECRET> JWT_HEADER=Authorization
+# Load JWT secret from a user-scoped env file (not stored in repo).
+EnvironmentFile=%h/.config/nextcloud/secrets.env
+Environment=JWT_ENABLED=true JWT_SECRET=${JWT_SECRET} JWT_HEADER=Authorization
 
 [Install]
 WantedBy=default.target

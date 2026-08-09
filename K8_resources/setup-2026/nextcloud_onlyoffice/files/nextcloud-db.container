@@ -8,7 +8,10 @@ ContainerName=nextcloud-db
 Image=docker.io/library/postgres:15-alpine
 Network=nextcloud-net
 Volume=nc-db-data:/var/lib/postgresql/data:Z
-Environment=POSTGRES_DB=nextcloud POSTGRES_USER=nextcloud_user POSTGRES_PASSWORD=<REDACTED_SECRET>
+# Load sensitive values from a user-scoped env file (not stored in repo).
+# Create: ~/.config/nextcloud/secrets.env (owner-only permissions)
+EnvironmentFile=%h/.config/nextcloud/secrets.env
+Environment=POSTGRES_DB=nextcloud POSTGRES_USER=nextcloud_user POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
 
 [Install]
 WantedBy=default.target

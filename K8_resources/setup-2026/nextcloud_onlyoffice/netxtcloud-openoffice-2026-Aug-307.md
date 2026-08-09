@@ -24,223 +24,191 @@ graph LR
             NC_DB["nextcloud-db"]
         end
     end
-
-    %% Flow Connections
-    Public -->|HTTPS / WSS| NP_Details
-    NP_Details -->|https://gardenofrot.cc| NC_App
-    NP_Details -->|https://gardenofrot.cc| OO_Docs
-    NC_App <--> NC_DB
-    NC_App -->|Internal Mesh HTTP| OO_Docs
-    OO_Docs -->|Internal Mesh HTTP| NC_App
-
 ```
+
+# Sovereign Digital Workspace — Nextcloud + ONLYOFFICE (Comprehensive)
+
+This document is the canonical deployment reference for the Nextcloud + ONLYOFFICE environment in this folder. It intentionally contains full operational and recovery instructions needed to recreate the environment from scratch. Where a full, authoritative script exists in `/files/`, the script is referenced as the canonical source and should be used directly.
+
+---
+
+## At-a-glance
+
+- App host (Podman & quadlets): `euro-office` VM (example IP: `192.168.0.116`)
+- Reverse proxy host (Nginx + certbot): `nginx-proxy` VM (example IP: `192.168.0.101`)
+- Internal Podman network: `nextcloud-net` (rootless)
+
+**Quick resources**
+
+| Role | Host / Container | Port |
+|---|---:|---:|
+| Reverse proxy (Nginx) | nginx-proxy VM | 80 / 443 (public) |
+| Nextcloud app container | nextcloud-app | 8080 (host -> container 80) |
+| ONLYOFFICE document server | onlyoffice-docs | 8081 (host -> container 80) |
+| Database (Postgres / MariaDB) | nextcloud-db | 5432 / 3306 |
+
+**Canonical files (use these as authoritative on-disk definitions)**
+
+- [files/step3_storage.sh](files/step3_storage.sh#L1) — create volumes and adjust permissions
+- [files/step4_quadlets.sh](files/step4_quadlets.sh#L1) — generates quadlet unit files (contains templates for `nextcloud-db.container`, `onlyoffice-docs.container`, `nextcloud-app.container`)
+- [files/nextcloud-db.container](files/nextcloud-db.container#L1) — DB quadlet
+- [files/onlyoffice-docs.container](files/onlyoffice-docs.container#L1) — ONLYOFFICE quadlet
+- [files/nextcloud-app.container](files/nextcloud-app.container#L1) — Nextcloud quadlet
+- [files/nextcloud-net.network](files/nextcloud-net.network#L1) — Podman network quadlet
+- [files/master_deploy.sh](files/master_deploy.sh#L1) — orchestration wrapper (runs steps 3–6)
+- [files/step5_integration.sh](files/step5_integration.sh#L1) — integration and proxy rules
+
+If you edit or regenerate quadlets, treat the files under `files/` as the single source of truth.
+
+---
+
+## Architecture Diagram
 
 ```mermaid
-graph TD
-    %% Node Definitions
-    Public["[ Public Traffic / LAN ]"]
-    
-    subgraph NginxProxy["nginx-proxy VM"]
-        NP_Details["192.168.0.101<br>(SSL Termination & WS Routing)"]
+flowchart LR
+    Internet["Public Internet"]
+    Nginx["Nginx Proxy (nginx-proxy)"]
+    Host["Application Host (euro-office)"]
+    subgraph Podman["Podman network: nextcloud-net"]
+        App["nextcloud-app"]
+        Docs["onlyoffice-docs"]
+        DB["nextcloud-db"]
     end
-    
-    subgraph EuroOffice["euro-office VM"]
-        EO_Details["192.168.0.116"]
-        
-        subgraph PodmanNet["Podman Network: nextcloud-net"]
-            NC_App["nextcloud-app (Port 8080)"]
-            OO_Docs["onlyoffice-docs (Port 8081)"]
-            NC_DB["nextcloud-db"]
-        end
-    end
-
-    %% Flow Connections
-    Public --> NP_Details
-    NP_Details -->|Proxy Pass HTTP| EO_Details
-    EO_Details --> NC_App
-    EO_Details --> OO_Docs
-    EO_Details --> NC_DB
-
-    %% Styling
-    style Public fill:#f9f9f9,stroke:#333,stroke-width:1px
-    style NginxProxy fill:#fff,stroke:#333,stroke-width:1px
-    style EuroOffice fill:#fff,stroke:#333,stroke-width:1px
-    style PodmanNet fill:#f5f5f5,stroke:#333,stroke-width:1px,stroke-dasharray: 5 5
-
+    Internet -->|HTTPS| Nginx
+    Nginx -->|HTTP / WS| Host
+    Host --> App
+    Host --> Docs
+    App <---> DB
+    App <---> Docs
 ```
 
-* Application VM (Host OS): Fedora Server
-* Hostname: euro-office
-   * IP Address: 192.168.0.116
-* Reverse Proxy VM: Nginx Server
-* Hostname: nginx-proxy
-   * IP Address: 192.168.0.101
-* Internal Port Allocations (on euro-office):
-* Nextcloud Core Web Access: Port 8080
-   * ONLYOFFICE Document Server Access: Port 8081
+---
 
-------------------------------
-## Part 1: Nginx Proxy Configuration (nginx-proxy VM)
-Log into the nginx-proxy (192.168.0.101) server.
+## Full setup steps (authoritative)
 
-Create a virtual host configuration file to route traffic to the application VM. 
+Follow these sections in order. Where a script exists, prefer running the script rather than copy/pasting text.
 
-Replace **://yourdomain.com** with the actual domain names.
+### A. Prepare the app host (Podman, systemd user)
 
-On Ubuntu/Debian systems, the configuration file is locted at **/etc/nginx/sites-available/euro-office.conf** and enabled via a symbolic link to **/etc/nginx/sites-enabled/**. 
-
-On RHEL/Fedora/Rocky Linux systems, the file should be created directly at **/etc/nginx/conf.d/euro-office.conf**. 
-
-# 1. Nextcloud Frontend Proxy Block
-```bash
-# 1. Define your domain name environment variable
-export MY_DOMAIN="gardenofrot.cc"
-
-# 2. Overwrite office.conf with modern HTTP/2 directives
-sudo tee /etc/nginx/sites-available/office.conf > /dev/null << EOF
-# =========================================================================
-# 1. NEXTCLOUD FRONTEND PROXY BLOCK (Port 8080)
-# =========================================================================
-server {
-    listen 80;
-    listen [::]:80;
-    server_name nextcloud.${MY_DOMAIN};
-    return 301 https://\$host\$request_uri;
-}
-
-server {
-    listen 443 ssl;
-    listen [::]:443 ssl;
-    server_name nextcloud.${MY_DOMAIN};
-    
-    # Modern HTTP/2 Activation Directive
-    http2 on;
-
-    # SSL Certificate Paths
-    ssl_certificate /etc/letsencrypt/live/${MY_DOMAIN}/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/${MY_DOMAIN}/privkey.pem;
-
-    ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_prefer_server_ciphers off;
-
-    # Performance and Security Headers for large file syncs
-    client_max_body_size 10G; 
-    fastcgi_buffers 64 4K;
-
-    location / {
-        proxy_pass http://192.168.0.116:8080;
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-        
-        # Service Discovery Redirects for Nextcloud Sync Clients
-        location ^~ /.well-known/carddav { return 301 \$scheme://\$host/remote.php/dav/; }
-        location ^~ /.well-known/caldav  { return 301 \$scheme://\$host/remote.php/dav/; }
-    }
-}
-
-# =========================================================================
-# 2. ONLYOFFICE DOCUMENT SERVER PROXY BLOCK (Port 8081)
-# =========================================================================
-server {
-    listen 80;
-    listen [::]:80;
-    server_name office.${MY_DOMAIN};
-    return 301 https://\$host\$request_uri;
-}
-
-server {
-    listen 443 ssl;
-    listen [::]:443 ssl;
-    server_name office.${MY_DOMAIN};
-
-    # Modern HTTP/2 Activation Directive
-    http2 on;
-
-    # SSL Certificate Paths
-    ssl_certificate /etc/letsencrypt/live/${MY_DOMAIN}/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/${MY_DOMAIN}/privkey.pem;
-
-    ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_prefer_server_ciphers off;
-
-    # Payload limits for large documents
-    client_max_body_size 100M;
-
-    location / {
-        proxy_pass http://192.168.0.116:8081;
-
-        proxy_redirect http:// \$scheme://;
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Host \$host;
-        proxy_set_header X-Forwarded-Proto https;
-
-        # WebSocket support for live collaboration editing
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade \$http_upgrade;
-        proxy_set_header Connection "upgrade";
-
-        # Timeouts to stop disconnects during quiet editing phases
-        proxy_read_timeout 3600s;
-        proxy_send_timeout 3600s;
-        proxy_connect_timeout 10s;
-        proxy_next_upstream error timeout invalid_header http_502;
-    }
-}
-EOF
-
-
-
-# Create the Symbic Link
-sudo ln -s /etc/nginx/sites-available/office.conf /etc/nginx/sites-enabled/
-
-#  Test he link worked
-# 1. Test the Nginx configuration for syntax errors
-sudo nginx -t
-
-# 2. If the test passes, reload Nginx to apply changes safely
-sudo systemctl reload nginx
-
-
-```
-
-------------------------------
-
-# Part 2: System Initialization & Firewall (euro-office VM)
-
-Log into the euro-office (192.168.0.116) server as a non-root user with sudo privileges.
+Commands below are example steps. On Fedora/RedHat use `dnf`, on Debian/Ubuntu use `apt`.
 
 ```bash
-# 1. Update the Debian package tree indices
-sudo apt update -y
-
-# 2. Upgrade any outdated system packages 
-sudo apt upgrade -y
-
-# 3. Install Podman natively on Debian 13
-sudo apt install -y podman
-
-# 4. Enable user lingering so containers stay running after SSH logout
-sudo loginctl enable-linger $USER
-
-# Install the native Debian firewall manager
-sudo apt install -y ufw
-
+# Install podman
 # Allow your SSH connection first so you don't get locked out!
 sudo ufw allow ssh
 
 # Open the Nextcloud and ONLYOFFICE web ports
+
+# Enable lingering so systemd user services run without active login
 sudo ufw allow 8080/tcp
+
+# Optional: allow unprivileged ports (if you plan to bind to low ports as non-root)
 sudo ufw allow 8081/tcp
 
+
+# Migrate podman state (safe to run if upgrading)
 # Enable the firewall service
+```
+
+If you want automation, the repository includes the quadlet generator and orchestration scripts — use:
+
+```bash
+# From the repository root on the app host
 sudo ufw --force enable
 
 
+```
+
+### B. Storage and permissions (detailed)
+
+- `files/step3_storage.sh` performs the following:
+    - creates Podman volumes: `nc-db-data`, `nc-app-data`, `nc-app-config`, `oo-data`, `oo-logs`
+    - inspects mountpoints and chowns them to UID 33 (www-data) inside rootless namespace
+
+Review the script before running: [files/step3_storage.sh](files/step3_storage.sh#L1)
+
+### C. Quadlets / container definitions
+
+The canonical quadlet templates live in `files/` and are produced by `step4_quadlets.sh`. Use those exact files to create systemd user services.
+
+- Inspect/edit the quadlets directly:
+    - [files/nextcloud-db.container](files/nextcloud-db.container#L1)
+    - [files/onlyoffice-docs.container](files/onlyoffice-docs.container#L1)
+    - [files/nextcloud-app.container](files/nextcloud-app.container#L1)
+    - [files/nextcloud-net.network](files/nextcloud-net.network#L1)
+
+Important: do not hardcode secrets in these files — use environment variables or a secrets manager. See `nextcloud-secrets.example.yaml`.
+
+Install quadlets (copy to user systemd folder and enable):
+
+```bash
+mkdir -p ~/.config/containers/systemd/
+cp files/*.container files/*.network ~/.config/containers/systemd/
+systemctl --user daemon-reload
+systemctl --user enable --now nextcloud-db.service onlyoffice-docs.service nextcloud-app.service
+```
+
+### D. Integration & trusted domains
+
+Use `files/step5_integration.sh` to perform integration tasks (trusted proxies, domains, ONLYOFFICE app install, allow_local_remote_servers flags). Review the file, then execute it:
+
+```bash
+bash files/step5_integration.sh
+```
+
+### E. Reverse proxy (nginx-proxy) and certbot
+
+On the reverse proxy VM, install Nginx and certbot; example commands for Debian/Ubuntu:
+
+```bash
+sudo apt update
+sudo apt install -y nginx certbot python3-certbot-nginx
+
+# Basic proxy site example (adapt domain names). See the repository README and examples.
+# Place the vhost config into /etc/nginx/sites-available/office.conf and enable with ln -s
+
+# Obtain a certificate (example)
+sudo certbot --nginx -d nextcloud.example.com -d office.example.com
+```
+
+The repository contains example Nginx blocks (see `readme.md` and the earlier docs). Keep TLS certs and private keys on the proxy host only.
+
+### F. Backups and recovery
+
+To be able to fully recreate the environment if lost, keep copies of:
+
+- All files in this repo (git remote)
+- Podman volumes backup (export SQL dump for DB and tar for Nextcloud data):
+
+```bash
+# dump MySQL/MariaDB (if used)
 echo "-> Configuring Debian rootless sub-UID namespaces..."
+
+# tar Nextcloud data and config
+podman run --rm -v nc-app-data:/data -v $(pwd):/backup alpine sh -c "tar czf /backup/nc-app-data.tar.gz -C /data ."
+```
+
+Store backups in a secure off-host location. Restore by recreating volumes and importing dumps.
+
+---
+
+## Secrets and secret store
+
+All secret values must be stored externally (Kubernetes Secret, Vault, encrypted file, or systemd environment file with strict perms). Example template: `nextcloud-secrets.example.yaml`.
+
+---
+
+## Troubleshooting & verification
+
+- Check Podman container status: `podman ps -a`
+- Follow container logs: `podman logs nextcloud-app --tail 500`
+- Check systemd user services: `systemctl --user status nextcloud-app.service`
+
+If you'd like, I can now:
+- convert the quadlets to reference secrets via a runtime `valueFrom` pattern (for Kubernetes), or
+- prepare a single commit that groups all redaction and documentation changes for review.
+
+```bash
 sudo usermod --add-subuids 100000-165535 --add-subgids 100000-165535 $USER || true
 podman system migrate
 # 1. Lower the secure port allocation threshold to port 80
@@ -251,7 +219,6 @@ echo "net.ipv4.ip_unprivileged_port_start=80" | sudo tee -a /etc/sysctl.conf
 
 # 3. Force Podman to clear its internal state and sync changes
 podman system migrate
-
 ```
 
 ------------------------------

@@ -35,8 +35,11 @@ Requires=nextcloud-net-network.service
 ContainerName=nextcloud-db
 Image=docker.io/library/postgres:15-alpine
 Network=nextcloud-net
+
 Volume=nc-db-data:/var/lib/postgresql/data:Z
-Environment=POSTGRES_DB=nextcloud POSTGRES_USER=nextcloud_user POSTGRES_PASSWORD=<REDACTED_SECRET>
+# Load sensitive values from user-scoped env file: %h/.config/nextcloud/secrets.env
+EnvironmentFile=%h/.config/nextcloud/secrets.env
+Environment=POSTGRES_DB=nextcloud POSTGRES_USER=nextcloud_user POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
 
 [Install]
 WantedBy=default.target
@@ -56,7 +59,9 @@ Network=nextcloud-net
 PublishPort=8081:80
 Volume=oo-data:/var/www/onlyoffice/Data:Z
 Volume=oo-logs:/var/log/onlyoffice:Z
-Environment=JWT_ENABLED=true JWT_SECRET=<REDACTED_SECRET> JWT_HEADER=Authorization
+# Load JWT secret from user-scoped env file: %h/.config/nextcloud/secrets.env
+EnvironmentFile=%h/.config/nextcloud/secrets.env
+Environment=JWT_ENABLED=true JWT_SECRET=${JWT_SECRET} JWT_HEADER=Authorization
 
 [Install]
 WantedBy=default.target
@@ -76,7 +81,9 @@ Network=nextcloud-net
 PublishPort=8080:80
 Volume=nc-app-data:/var/www/html:Z
 Volume=nc-app-config:/var/www/html/config:Z
-Environment=POSTGRES_HOST=nextcloud-db POSTGRES_DB=nextcloud POSTGRES_USER=nextcloud_user POSTGRES_PASSWORD=<REDACTED_SECRET> NEXTCLOUD_ADMIN_USER=admin NEXTCLOUD_ADMIN_PASSWORD=<REDACTED_SECRET>
+# Load DB and admin passwords from user-scoped env file: %h/.config/nextcloud/secrets.env
+EnvironmentFile=%h/.config/nextcloud/secrets.env
+Environment=POSTGRES_HOST=nextcloud-db POSTGRES_DB=nextcloud POSTGRES_USER=nextcloud_user POSTGRES_PASSWORD=${POSTGRES_PASSWORD} NEXTCLOUD_ADMIN_USER=admin NEXTCLOUD_ADMIN_PASSWORD=${NEXTCLOUD_ADMIN_PASSWORD}
 
 [Install]
 WantedBy=default.target
